@@ -195,6 +195,17 @@ class FileProcessor:
         self.output_dir = output_dir.resolve()
         validate_directory(self.output_dir)
 
+    def _ensure_text(self, value):
+        """
+        Ensure the provided value is text. If it's a list, join elements; otherwise convert to str.
+        """
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            # join list of strings or list of objects coerced to strings
+            return "\n".join(map(lambda x: x if isinstance(x, str) else str(x), value))
+        return str(value)
+
     def format_chunk(self, chunk: dict) -> str:
         """
         Format a chunk into plain text for saving.
@@ -209,26 +220,51 @@ class FileProcessor:
         str
             A formatted plain-text representation of the chunk.
         """
+        # Defensive: if chunk is not a dict, coerce and return
+        if not isinstance(chunk, dict):
+            logger.warning(f"format_chunk expected dict, got {type(chunk)}; coercing to string.")
+            return str(chunk)
+
         chunk_type = chunk.get("type", "unknown")
         if chunk_type == "function":
-            docstring = f"\nDocstring:\n{chunk['docstring']}" if chunk.get('docstring') else ""
-            return f"Function: {chunk.get('name')}{docstring}\nCode:\n{chunk.get('code')}"
+            docstring = chunk.get("docstring") or ""
+            docstring = self._ensure_text(docstring)
+            code = self._ensure_text(chunk.get("code", ""))
+            return f"Function: {chunk.get('name')}{('\\nDocstring:\\n' + docstring) if docstring else ''}\nCode:\n{code}"
         elif chunk_type == "class":
-            docstring = f"\nDocstring:\n{chunk['docstring']}" if chunk.get('docstring') else ""
-            return f"Class: {chunk.get('name')}{docstring}\nCode:\n{chunk.get('code')}"
+            docstring = chunk.get("docstring") or ""
+            docstring = self._ensure_text(docstring)
+            code = self._ensure_text(chunk.get("code", ""))
+            return f"Class: {chunk.get('name')}{('\\nDocstring:\\n' + docstring) if docstring else ''}\nCode:\n{code}"
         elif chunk_type == "comments":
-            comments = "\n".join(f"Line {c['line']}: {c['text']}" for c in chunk.get("content", []))
-            return f"Comments:\n{comments}"
+            content = chunk.get("content", [])
+            # content may be a list of dicts or strings
+            if isinstance(content, list):
+                comments = []
+                for c in content:
+                    if isinstance(c, dict):
+                        comments.append(f"Line {c.get('line')}: {c.get('text')}")
+                    else:
+                        comments.append(self._ensure_text(c))
+                comments_text = "\n".join(comments)
+            else:
+                comments_text = self._ensure_text(content)
+            return f"Comments:\n{comments_text}"
         elif chunk_type == "file":
-            return f"File: {chunk.get('name')}\nContent:\n{chunk.get('content', '')}"
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"File: {chunk.get('name')}\nContent:\n{content}"
         elif chunk_type == "html_script":
-            return f"HTML Script:\n{chunk.get('content', '')}"
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"HTML Script:\n{content}"
         elif chunk_type == "html_style":
-            return f"HTML Style:\n{chunk.get('content', '')}"
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"HTML Style:\n{content}"
         elif chunk_type == "css_rule":
-            return f"CSS Rule:\n{chunk.get('content', '')}"
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"CSS Rule:\n{content}"
         else:
-            return f"Unknown chunk type:\n{chunk}"
+            # Unknown chunk: turn it into a string representation
+            return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
 
     def chunk_python_file(self, file_path: Path) -> tuple[list, int]:
         """
@@ -410,7 +446,7 @@ class FileProcessor:
 
         Notes
         -----
-        Supports semantic extraction for JavaScript/TypeScript (functions, classes, arrow functions), Java (methods, classes), C/C++ (functions, structs), HTML (scripts, styles), and CSS (rules). Falls back to full content if parsing fails.
+        Supports semantic extraction for JavaScript/TypeScript (functions, classes, arrow functions), Java (methods, classes), C/C++ (functions, structs), HTML (scripts, styles), and CSS (rules). Fall[...]
         """
         try:
             source = file_path.read_text(encoding="utf-8")
@@ -604,6 +640,11 @@ class RepoContentProcessor:
             The subdirectory where the chunk should be saved.
         """
         formatted = self.file_processor.format_chunk(chunk)
+        # Defensive: ensure formatted is a string
+        if not isinstance(formatted, str):
+            logger.warning(f"format_chunk returned non-str for chunk (type: {type(chunk)}); coercing to str.")
+            formatted = str(formatted)
+
         chunk_word_count = len(formatted.split())
         if self.current_word_count + chunk_word_count > self.max_words:
             self.save_content(subdir)
@@ -702,15 +743,17 @@ class RepoContentProcessor:
             for chunk in chunks:
                 self.save_chunk(chunk, subdir)
 
+            # compute words safely: format_chunk always returns a string now
+            words_in_chunks = sum(len(self.file_processor.format_chunk(chunk).split()) for chunk in chunks)
             self.metadata["processed_files"].append({
                 "path": relative_path,
                 "chunks": len(chunks),
                 "size": file_path.stat().st_size,
                 "lines": line_count,
-                "words": sum(len(self.file_processor.format_chunk(chunk).split()) for chunk in chunks)
+                "words": words_in_chunks
             })
             self.metadata["summary"]["total_files_processed"] += 1
-            self.metadata["summary"]["total_words"] += sum(len(self.file_processor.format_chunk(chunk).split()) for chunk in chunks)
+            self.metadata["summary"]["total_words"] += words_in_chunks
             self.hashes[relative_path] = current_hash
         except Exception as e:
             logger.warning(f"Error processing file {file_path}: {e}")
