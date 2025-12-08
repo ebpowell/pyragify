@@ -7,7 +7,7 @@ import logging
 from io import StringIO
 from pathlib import Path
 from collections import defaultdict
-from pyragify.utils import validate_directory
+from utils import validate_directory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

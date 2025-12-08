@@ -4,10 +4,8 @@ from pathlib import Path
 # Add src to sys.path to ensure we can import the package
 sys.path.append(str(Path(__file__).parents[1] / "src"))
 
-from pyragify.processor import RepoContentProcessor
-
-
-from pyragify.powerbi_processor import pbi_processor
+from ..src.pyragify.processor import RepoContentProcessor
+from ..src.pyragify.powerbi_processor import pbi_processor
 
 if __name__ == "__main__":
     # repo_path = Path(sys.argv[1])

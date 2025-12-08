@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from pyragify.processor import FileProcessor
+from processor import FileProcessor
 
 logger = logging.getLogger(__name__)
 
