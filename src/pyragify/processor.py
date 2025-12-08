@@ -139,7 +139,8 @@ FILE_TYPE_MAP = {
     ".html": "html",
     ".css": "css",
     ".md": "markdown",
-    ".markdown": "markdown"
+    ".markdown": "markdown",
+    ".tmdl": "powerbi"
 }
 
 def read_file_in_chunks(file_path: Path, chunk_size: int = 4096):
@@ -538,7 +539,7 @@ class RepoContentProcessor:
         Determine the output subdirectory for a file based on its type.
     """
 
-    def __init__(self, repo_path: Path, output_dir: Path, max_words: int = 200000, max_file_size: int = 10 * 1024 * 1024, skip_patterns: list = None, skip_dirs: list = None):
+    def __init__(self, repo_path: Path, output_dir: Path, max_words: int = 200000, max_file_size: int = 10 * 1024 * 1024, skip_patterns: list = None, skip_dirs: list = None, processor_class=FileProcessor):
         self.repo_path = repo_path.resolve()
         self.output_dir = output_dir.resolve()
         self.max_words = max_words
@@ -555,7 +556,7 @@ class RepoContentProcessor:
             "skipped_files": [],
             "summary": {"total_files_processed": 0, "total_words": 0}
         }
-        self.file_processor = FileProcessor(self.repo_path, self.output_dir)
+        self.file_processor = processor_class(self.repo_path, self.output_dir)
 
         validate_directory(self.output_dir)
 
