@@ -2,7 +2,7 @@ import typer
 import logging
 from pathlib import Path
 from omegaconf import OmegaConf
-from pyragify.processor import RepoContentProcessor
+from processor import RepoContentProcessor
 
 # Configure logging
 logging.basicConfig(
