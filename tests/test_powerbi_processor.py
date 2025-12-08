@@ -23,7 +23,7 @@ ref table 'Product'
 
 @pytest.fixture
 def sample_tmdl_file(tmp_path):
-    """Fixture for a sample TMDL file with tables."""
+    """Fixture for a sample TMDL file with tables and other keywords."""
     file_path = tmp_path / "tables.tmdl"
     file_path.write_text("""
 table Date
@@ -37,6 +37,13 @@ table Sales
     lineageTag: 3e5678...
 
     measure 'Total Sales' = SUM(Sales[Amount])
+        formatString: $#,##0
+
+    partition Partition1
+        mode: import
+        source = M
+
+    annotation PBI_ResultType = Table
 """)
     return file_path
 
@@ -57,18 +64,57 @@ class TestPbiProcessor:
         chunks, line_count = processor.chunk_tmdl_file(sample_tmdl_file)
         
         assert line_count > 0
-        # Should have 2 tables: Date and Sales
-        assert len(chunks) == 2 
+        # Expected chunks:
+        # 1. table Date
+        # 2. column Date
+        # 3. table Sales
+        # 4. measure 'Total Sales'
+        # 5. partition Partition1
+        # 6. annotation PBI_ResultType
+        assert len(chunks) == 6
         
-        date_chunk = chunks[0]
-        assert date_chunk["type"] == "table"
-        assert date_chunk["name"] == "Date"
-        assert "column Date" in date_chunk["content"]
+        types = [c["type"] for c in chunks]
+        assert "table" in types
+        assert "column" in types
+        assert "measure" in types
+        assert "partition" in types
+        assert "annotation" in types
         
-        sales_chunk = chunks[1]
-        assert sales_chunk["type"] == "table"
-        assert sales_chunk["name"] == "Sales"
-        assert "measure 'Total Sales'" in sales_chunk["content"]
+        # Verify specific content containment
+        col_chunk = next(c for c in chunks if c["type"] == "column")
+        assert col_chunk["name"] == "Date"
+        assert "dataType: dateTime" in col_chunk["content"]
+        
+        measure_chunk = next(c for c in chunks if c["type"] == "measure")
+        assert measure_chunk["name"] == "'Total Sales'"
+        assert "formatString" in measure_chunk["content"]
+
+        partition_chunk = next(c for c in chunks if c["type"] == "partition")
+        assert partition_chunk["name"] == "Partition1"
+        assert "mode: import" in partition_chunk["content"]
+        
+        # Verify parent association
+        assert col_chunk["parent"] == "Date"
+        assert measure_chunk["parent"] == "Sales"
+        assert partition_chunk["parent"] == "Sales"
+        
+        # Annotation defined inside Sales table
+        annotation_chunk = next(c for c in chunks if c["type"] == "annotation")
+        assert annotation_chunk["parent"] == "Sales"
+
+    def test_format_chunk_parent(self, tmp_path):
+        """Test formatting with parent table."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "column",
+            "name": "Date",
+            "content": "dataType: dateTime",
+            "parent": "DateTable"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Column: Date" in formatted
+        assert "Table: DateTable" in formatted
+        assert formatted.startswith("Table: DateTable")
 
     def test_chunk_file_delegation(self, sample_tmdl_file, sample_python_file, tmp_path):
         """Test that chunk_file delegates correctly."""
