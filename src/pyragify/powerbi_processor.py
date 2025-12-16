@@ -28,7 +28,7 @@ class pbi_processor(FileProcessor):
 
         chunks = []
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
                 lines = f.readlines()
             line_count = len(lines)
 
@@ -127,7 +127,7 @@ class pbi_processor(FileProcessor):
         Parse model.tmdl to extract table references and return an index chunk.
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
                 content = f.read()
             line_count = content.count('\n') + 1
             
@@ -160,7 +160,9 @@ class pbi_processor(FileProcessor):
         elif chunk.get("type") == "model_index":
              content = self._ensure_text(chunk.get("content", ""))
              return f"Model Index:\n{content}"
-        elif chunk.get("type") in ["column", "partition", "expression", "measure", "annotation"]:
+        elif chunk.get("type") in ["column", "partition", "expression", "measure", 
+        "annotation", "relationship","joinOnDateBehavior", "fromColumn", "toColumn", 
+        "joinOnDateBehavior", "database"]:
              type_label = chunk.get("type").capitalize()
              content = self._ensure_text(chunk.get("content", ""))
              parent = chunk.get("parent")

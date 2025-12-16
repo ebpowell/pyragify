@@ -12,8 +12,10 @@ from pyragify.powerbi_processor import pbi_processor
 if __name__ == "__main__":
     # repo_path = Path(sys.argv[1])
     # output_dir = Path(sys.argv[2])
-    repo_path = Path('/home/ebpowell/GIT_REPO/ai_bi_code')
-    output_dir = Path('/home/ebpowell/GIT_REPO/ai_bi_code/output')
+    home_folder = '/home/ebpowell/GIT_REPO/'
+    repo_name ='ABWC/ABWC_Transitions/Model'
+    repo_path = Path(home_folder + repo_name)
+    output_dir = Path(home_folder + repo_name + '/output')
     hashes_file = output_dir / "hashes.json"
     if hashes_file.exists():
         hashes_file.unlink()
