@@ -4,7 +4,7 @@ from processor import FileProcessor
 
 logger = logging.getLogger(__name__)
 
-class pbi_processor(FileProcessor):
+class PBIProcessor(FileProcessor):
     """
     Processor for PowerBI files, specifically TMDL files.
     """
