@@ -1,6 +1,9 @@
+import re
+from sentence_transformers import SentenceTransformer
 import logging
 from pathlib import Path
 from processor import FileProcessor
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,8 @@ class PBIProcessor(FileProcessor):
         """
         if file_path.name == "model.tmdl":
             return self.chunk_model_tmdl(file_path)
+        # elif file_path.name == "relationships.tmdl":
+        #     return self.chunk_relationships_tmdl(file_path)
 
         chunks = []
         try:
@@ -150,6 +155,81 @@ class PBIProcessor(FileProcessor):
             logger.warning(f"Error processing model.tmdl {file_path}: {e}")
             return [], 0
 
+    def vectorize_relationships(self, file_path: Path) -> tuple[list, int]:
+        """
+        Transforms raw relationship logs into semantic vectors
+        by flattening the structure into human-readable sentences.
+        """
+        # Read the file
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                raw_data = f.read()
+            # Initialize the embedding model
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            # 1. Parsing and Cleaning logic
+            # We use regex to find the blocks of relationships
+            rel_blocks = re.split(r'relationship\s+', raw_data)[1:]
+
+            processed_strings = []
+            metadata = []
+
+            for block in rel_blocks:
+                lines = block.strip().split('\n')
+                rel_id = lines[0].strip()
+
+                # Extract fields using simple dictionary comprehension
+                details = {}
+                for line in lines[1:]:
+                    if ':' in line:
+                        k, v = line.split(':', 1)
+                        details[k.strip()] = v.strip()
+
+                from_col = details.get('fromColumn', 'Unknown')
+                to_col = details.get('toColumn', 'Unknown')
+
+                # 2. Semantic Normalization
+                # Simplify "LocalDateTable_uuid" to just "Date Table"
+                # to help the LLM recognize the pattern.
+                to_col_clean = re.sub(r'LocalDateTable_[a-z0-9-]+', 'DateTable', to_col)
+
+                # 3. Construct a descriptive sentence (The "Vector Target")
+                semantic_description = (
+                    f"Relationship {rel_id}: Table column '{from_col}' "
+                    f"links to '{to_col_clean}'."
+                )
+
+                if 'crossFilteringBehavior' in details:
+                    semantic_description += f" Filters in {details['crossFilteringBehavior']} direction."
+
+                processed_strings.append(semantic_description)
+
+                # Keep original data for the "Context" field in your Vector DB
+                metadata.append({
+                    "id": rel_id,
+                    "original_from": from_col,
+                    "original_to": to_col,
+                    "raw_text": block
+                })
+
+            # 4. Generate the actual vectors
+            embeddings = model.encode(processed_strings)
+
+            return embeddings, processed_strings, metadata
+        except Exception as e:
+            logger.warning(f"Error processing relationships.tmdl {file_path}: {e}")
+            return [], 0
+    # # Example Usage:
+    # raw_input = """relationship 483d33b8-1f95-43b9-b4c3-8129384e273e
+    # 	joinOnDateBehavior: datePartOnly
+    # 	fromColumn: v_RssBIReporting.ApprovalDate
+    # 	toColumn: LocalDateTable_a8f758b6-0381-4e22-bd61-c74a6f5630ec.Date"""
+    #
+    # vectors, texts, meta = vectorize_relationships(raw_input)
+    #
+    # print(f"Generated Vector for: {texts[0]}")
+    # print(f"Vector Shape: {vectors[0].shape}")
+
     def format_chunk(self, chunk: dict) -> str:
         """
         Format a chunk into plain text for saving.
@@ -162,7 +242,7 @@ class PBIProcessor(FileProcessor):
              return f"Model Index:\n{content}"
         elif chunk.get("type") in ["column", "partition", "expression", "measure", 
         "annotation", "relationship","joinOnDateBehavior", "fromColumn", "toColumn", 
-        "joinOnDateBehavior", "database"]:
+        "joinOnDateBehavior", "database", "Source"]:
              type_label = chunk.get("type").capitalize()
              content = self._ensure_text(chunk.get("content", ""))
              parent = chunk.get("parent")
