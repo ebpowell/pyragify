@@ -218,17 +218,6 @@ class PBIProcessor(FileProcessor):
             return embeddings, processed_strings, metadata
         except Exception as e:
             logger.warning(f"Error processing relationships.tmdl {file_path}: {e}")
-            return [], 0
-    # # Example Usage:
-    # raw_input = """relationship 483d33b8-1f95-43b9-b4c3-8129384e273e
-    # 	joinOnDateBehavior: datePartOnly
-    # 	fromColumn: v_RssBIReporting.ApprovalDate
-    # 	toColumn: LocalDateTable_a8f758b6-0381-4e22-bd61-c74a6f5630ec.Date"""
-    #
-    # vectors, texts, meta = vectorize_relationships(raw_input)
-    #
-    # print(f"Generated Vector for: {texts[0]}")
-    # print(f"Vector Shape: {vectors[0].shape}")
 
     def format_chunk(self, chunk: dict) -> str:
         """
