@@ -27,15 +27,24 @@ if __name__ == "__main__":
 
     # Use pbi_processor to handle PowerBI files
     # Need to locally overload skip_patterns with *.py, *.md, etc to use the appropriate function from FileProcessor
-    pbi_skip = skip_patterns + ['*.py, *.md, *.html, *.css']
+    # Also ignore .sql files here so they can be handled by SqlProcessor
+    pbi_skip = skip_patterns + ['*.py', '*.md', '*.html', '*.css', '*.sql']
     processor = RepoContentProcessor(repo_path, output_dir, skip_patterns=pbi_skip, skip_dirs=skip_folders,
                                      processor_class=PBIProcessor)
     processor.process_repo()
     del processor
-    # If a mixed repo (has PowerBI AND Pythion etc.) locally overload skip_patterns with *.tmdl) to keep from re-running the
-    # PowerBI files). Will eventually need to build this logic into cli with flags. There is probably a better implementation
-    # of this logic....
-    py_skip = skip_patterns+['*.tmdl']
+
+    # Handle SQL files with SqlProcessor
+    sql_skip = skip_patterns + ['*.py', '*.md', '*.html', '*.css', '*.tmdl']
+    from sql_processor import SqlProcessor
+    processor = RepoContentProcessor(repo_path, output_dir, skip_patterns=sql_skip, skip_dirs=skip_folders,
+                                     processor_class=SqlProcessor)
+    processor.process_repo()
+    del processor
+
+    # If a mixed repo (has PowerBI AND Python AND SQL etc.) locally overload skip_patterns with *.tmdl and *.sql
+    # to keep from re-running the PowerBI and SQL files).
+    py_skip = skip_patterns + ['*.tmdl', '*.sql']
     processor = RepoContentProcessor(repo_path, output_dir, skip_patterns=py_skip, skip_dirs=skip_folders,
                                      processor_class=FileProcessor)
     processor.process_repo()
