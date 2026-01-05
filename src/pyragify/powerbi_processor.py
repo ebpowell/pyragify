@@ -1,9 +1,6 @@
-import re
-from sentence_transformers import SentenceTransformer
 import logging
 from pathlib import Path
 from processor import FileProcessor
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +25,8 @@ class PBIProcessor(FileProcessor):
         """
         if file_path.name == "model.tmdl":
             return self.chunk_model_tmdl(file_path)
-        # elif file_path.name == "relationships.tmdl":
-        #     return self.chunk_relationships_tmdl(file_path)
+        elif file_path.name == "relationships.tmdl":
+            return self.vectorize_relationships(file_path)
 
         chunks = []
         try:
@@ -160,6 +157,14 @@ class PBIProcessor(FileProcessor):
         Transforms raw relationship logs into semantic vectors
         by flattening the structure into human-readable sentences.
         """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing TMDL Relationships File
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError()
         # Read the file
         try:
             with open(file_path, "r", encoding="utf-8-sig") as f:
@@ -229,8 +234,11 @@ class PBIProcessor(FileProcessor):
         elif chunk.get("type") == "model_index":
              content = self._ensure_text(chunk.get("content", ""))
              return f"Model Index:\n{content}"
+        elif chunk.get("type") == "model_relationships":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Model Relationships:\n{content}"
         elif chunk.get("type") in ["column", "partition", "expression", "measure", 
-        "annotation", "relationship","joinOnDateBehavior", "fromColumn", "toColumn", 
+        "annotation", "joinOnDateBehavior", "fromColumn", "toColumn",
         "joinOnDateBehavior", "database", "Source"]:
              type_label = chunk.get("type").capitalize()
              content = self._ensure_text(chunk.get("content", ""))
