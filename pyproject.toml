@@ -5,7 +5,8 @@ description = "A tool for processing code repositories into semantic chunks for 
 readme = "README.md"
 requires-python = ">=3.9, <3.13"
 authors = [
-    {name = "ThomasBury"}
+    {name = "ThomasBury"},
+    {name = "ebpowell"}
 ]
 license = {text = "The Unlicense"}
 keywords = ["code-processing", "chunking", "repository-analysis", "notebookLM"]
