@@ -417,6 +417,17 @@ class FileProcessor:
             return self.chunk_markdown_file(file_path)
         elif suffix in FILE_TYPE_MAP:
             return self.chunk_tree_sitter_file(file_path, suffix)
+        # elif suffix == ".sql":
+        #     # Assumes SqlProcessor logic is available or mixed-in [9]
+        #     return self.chunk_sql_file(file_path)
+        # elif suffix == ".tmdl":
+        #     # Assumes PBIProcessor logic is available or mixed-in [10]
+        #     return self.chunk_tmdl_file(file_path)
+        # elif suffix in ['.xlsx', '.xlsm']:
+        #     # Delegate to the ExcelProcessor logic
+        #     # If using mixins: return self.chunk_excel_file(file_path)
+        #     # If using composition:
+        #     return ExcelProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
         else:
             try:
                 content = file_path.read_text(encoding="utf-8")
