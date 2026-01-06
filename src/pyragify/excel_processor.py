@@ -44,7 +44,7 @@ class ExcelProcessor(FileProcessor):
                 })
 
             # 2. Extract Pivot Table Metadata (Ported from extract_pivot_logic [4])
-            pivot_logic = self._extract_pivot_logic(wb)
+            pivot_logic = self._extract_pivot_logic(wb, file_path.name)
             for pivot_desc in pivot_logic:
                 chunks.append({
                     "type": "excel_pivot",
@@ -53,7 +53,7 @@ class ExcelProcessor(FileProcessor):
                 })
 
             # 3. Extract Advanced Logic/External Links (Ported from extract_advanced_logic [5])
-            adv_logic = self._extract_advanced_logic(wb)
+            adv_logic = self._extract_advanced_logic(wb, file_path.name)
             if adv_logic:
                 chunks.append({
                     "type": "excel_dependencies",
@@ -75,46 +75,63 @@ class ExcelProcessor(FileProcessor):
         Ported from PrintFormula.extract_logic_themes [3].
         Normalizes formulas (e.g., =A2*B2 -> =COL_A*COL_B) to identify business logic patterns.
         """
-        import re  # Standard lib, safe to import top-level, but kept here for encapsulation
-
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing Excel
+        # ---------------------------------------------------------
+        import re
+        from openpyxl.worksheet.formula import ArrayFormula
+        # ---------------------------------------------------------
+        # report = []
         themes = {}
+        # report.append(f"\n### WORKBOOK: {filename}")
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
+
+            # report.append(f"\n## SHEET: {sheet_name}")
             themes[sheet_name] = {}
+            seen_patterns = set()
 
             for row in ws.iter_rows():
                 for cell in row:
                     if cell.data_type == 'f':  # Formula cell [3]
-                        # Normalize formula: Remove row numbers to find the "Theme"
-                        theme_pattern = re.sub(r'\d+', '', str(cell.value))
+                        if isinstance(cell.value, ArrayFormula):
+                            formula_text = cell.value.ref  # Extract the actual math string
+                        else:
+                            formula_text = str(cell.value)
+                        # Replaces any whitespace character (newlines, tabs, etc.) with a single space
+                        formula_text = re.sub(r'\s+', ' ', str(formula_text)).strip()
 
-                        if theme_pattern not in themes[sheet_name]:
-                            # Get column header context [6]
-                            header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                        theme_pattern = re.sub(r'\d+', '', str(formula_text))
+                        # 2. Extract Header for context
+                        header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                        # Replaces any whitespace character (newlines, tabs, etc.) with a single space
+                        header = re.sub(r'\s+', ' ', str(header)).strip()
+                        if theme_pattern not in seen_patterns:
                             themes[sheet_name][theme_pattern] = {
-                                "example_formula": cell.value,
-                                "column_context": header,
-                            }
-
-        # Format for LLM consumption [6]
+                                    "example_formula": formula_text,
+                                    "column_context": header,
+                                }
+                            seen_patterns.add(theme_pattern)
         if not themes:
             return ""
-
-        output = f"Logic Analysis for {filename}\n" + "=" * 30 + "\n"
+        output = f"### WORKBOOK: {filename}\n" + "=" * 30 + "\n"
+        # output += "### LOGIC ANALYSIS\n"
         for sheet, logic in themes.items():
             if not logic: continue
-            output += f"\nSheet: {sheet}\n"
+            output += f"\n## SHEET: {sheet}\n"
             for pattern, details in logic.items():
-                output += (f"- Theme in '{details['column_context']}': "
+                output += (f"- [THEME] in '{details['column_context']}': "
                            f"Uses logic {details['example_formula']} (Pattern: {pattern})\n")
         return output
 
-    def _extract_pivot_logic(self, wb) -> list:
+    def _extract_pivot_logic(self, wb, filename) -> list:
         """
         Ported from PrintFormula.extract_pivot_logic [4].
         Extracts metadata about Pivot Table sources and dimensions.
         """
         pivot_summaries = []
+        # pivot_summaries.append(f"### WORKBOOK: {filename}\n")
+        # pivot_summaries.append(f"### PIVOT TABLES\n")
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
             # Access internal _pivots attribute [4]
@@ -129,7 +146,7 @@ class ExcelProcessor(FileProcessor):
                         cs = cache.cacheSource
                         if cs.worksheetSource:
                             source_type = "Worksheet Range"
-                            source_name = cs.worksheetSource.ref or "Defined Name"
+                            source_name = f"[Sheet]: {cs.worksheetSource.sheet}, [RANGE]: {cs.worksheetSource.ref or 'Defined Name'}"
                         elif hasattr(cs, 'extRef') and cs.extRef:
                             source_type = "External Reference"
                             source_name = getattr(cs.extRef, 'target', 'External Link')
@@ -138,6 +155,7 @@ class ExcelProcessor(FileProcessor):
                     fields = [f.name for f in cache.cacheFields if f.name]
 
                     logic_desc = (
+                        f"### WORKBOOK: {filename}\n" + "=" * 30 + "\n"
                         f"### PIVOT TABLE: {pivot.name}\n"
                         f"- **Location:** Sheet '{sheet_name}'\n"
                         f"- **Data Source Type:** {source_type}\n"
@@ -147,42 +165,70 @@ class ExcelProcessor(FileProcessor):
                     pivot_summaries.append(logic_desc)
         return pivot_summaries
 
-    def _extract_advanced_logic(self, wb) -> str:
+    def _extract_advanced_logic(self, wb, filename) -> list:
         """
         Ported from PrintFormula.extract_advanced_logic [5].
         Identifies external workbook links and LOOKUP "bridges".
         """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing Excel
+        # ---------------------------------------------------------
         import re
-        report = []
-
+        from openpyxl.worksheet.formula import ArrayFormula
+        #---------------------------------------------------------
+        return_string = []
+        bridges = []
+        lst_links = []
+        # report.append("### EXTERNAL DEPENDENCIES\n")
         # 1. External Links [5]
         if hasattr(wb, 'external_links') and wb.external_links:
             # Note: external_values implementation varies by openpyxl version,
             # keeping generic check based on source logic
-            report.append("### EXTERNAL DEPENDENCIES")
+            # report.append("### EXTERNAL DEPENDENCIES")
             for link in wb.external_links:
                 # Attempt to get target if available
                 target = getattr(link, 'file_link', getattr(link, 'target', 'Unknown Link'))
-                report.append(f"- Links to external file: {target}")
-
+                lst_links.append(f"- Links to external file: {target}")
         # 2. Lookup Logic [8]
         for sheet_name in wb.sheetnames:
+            report = []
             ws = wb[sheet_name]
             seen_patterns = set()
-
             for row in ws.iter_rows():
                 for cell in row:
                     if cell.data_type == 'f':
-                        formula = str(cell.value)
-
-                        if "LOOKUP" in formula.upper():
-                            header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
-                            # Deduplicate specific lookup patterns
-                            if formula not in seen_patterns:
-                                report.append(f"- [BRIDGE] Sheet '{sheet_name}' Col '{header}' fetches data: {formula}")
-                                seen_patterns.add(formula)
-
-        return "\n".join(report)
+                        # 1. Handle ArrayFormula objects vs standard strings
+                        if isinstance(cell.value, ArrayFormula):
+                            formula_text = cell.value.ref  # Extract the actual math string
+                        else:
+                            formula_text = str(cell.value)
+                        # Replaces any whitespace character (newlines, tabs, etc.) with a single space
+                        formula_text = re.sub(r'\s+', ' ', str(formula_text)).strip()
+                        # 2. Extract Header for context
+                        header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                        # Replaces any whitespace character (newlines, tabs, etc.) with a single space
+                        header = re.sub(r'\s+', ' ', str(header)).strip()
+                        # 3. Pattern Grouping (Logic Themes)
+                        theme_pattern = re.sub(r'\d+', '', str(formula_text))
+                        if "LOOKUP" in formula_text.upper() and theme_pattern not in seen_patterns:
+                            report.append(f"- [BRIDGE] {header}: {formula_text}")
+                            seen_patterns.add(theme_pattern)
+            if report:
+                bridges.append(f"## SHEET: {sheet_name}\n")
+                bridges += report
+                del report
+        if bridges or lst_links:
+            # return_string.append(f"\n### LINKS AND BRIDGES\n")
+            return_string.append(f"### WORKBOOK: {filename}\n" + "=" * 30 + "\n")
+            if lst_links:
+                return_string.append(f"## LINKS \n")
+                return_string += lst_links
+            if bridges:
+                return_string.append(f"## BRIDGES:")
+                return_string += bridges
+            return return_string
+        else:
+            return None
 
     def format_chunk(self, chunk: dict) -> str:
         """
