@@ -1,8 +1,5 @@
-import re
 import logging
-import sqlparse
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
 from processor import FileProcessor
 
 logger = logging.getLogger(__name__)
@@ -26,6 +23,15 @@ class SqlProcessor(FileProcessor):
         """
         Chunk a SQL file into semantic sections (statements).
         """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if SQL Files
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+            import sqlparse
+        except ImportError:
+            raise ImportError()
         chunks = []
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -83,6 +89,15 @@ class SqlProcessor(FileProcessor):
         Transforms SQL statements into semantic vectors.
         This serves as the vectorization engine for SQL files.
         """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if SQL Files
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+            import sqlparse
+        except ImportError:
+            raise ImportError()
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
