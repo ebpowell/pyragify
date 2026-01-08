@@ -234,7 +234,14 @@ class ExcelProcessor(FileProcessor):
         """
         Format a chunk into plain text for saving.
         """
-        if chunk.get("type") in ["excel_logic", "excel_pivot", "excel_dependencies"]:
-            return (f"Excel Analysis: {chunk.get('name')}\n"
+        type_map = {
+            "excel_logic": "Excel Logic",
+            "excel_pivot": "Excel Pivot",
+            "excel_dependencies": "Excel Dependencies"
+        }
+        chunk_type = chunk.get("type")
+        if chunk_type in type_map:
+            header = type_map[chunk_type]
+            return (f"{header}: {chunk.get('name')}\n"
                     f"Content:\n{self._ensure_text(chunk.get('content', ''))}")
         return super().format_chunk(chunk)
