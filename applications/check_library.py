@@ -16,7 +16,7 @@ from powerbi_processor import PBIProcessor
 
 if __name__ == "__main__":
     repo_folder = '/home/ebpowell/GIT_REPO/'
-    repo_name = 'ABWC/ABWC_Demo_work/Model'
+    repo_name = 'TradeOutreach'
     repo_path = Path(repo_folder + repo_name)
     output_dir = Path(repo_folder + repo_name + '/output')
     hashes_file = output_dir / "hashes.json"
