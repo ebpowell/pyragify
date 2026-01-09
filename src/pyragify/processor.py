@@ -418,8 +418,6 @@ class FileProcessor:
             return self.chunk_python_file(file_path)
         elif suffix in [".md", ".markdown"]:
             return self.chunk_markdown_file(file_path)
-        elif suffix in FILE_TYPE_MAP:
-            return self.chunk_tree_sitter_file(file_path, suffix)
         elif suffix == ".sql":
             # Assumes SqlProcessor logic is available or mixed-in [9]
             from sql_processor import SqlProcessor
@@ -432,6 +430,8 @@ class FileProcessor:
             # Delegate to the ExcelProcessor logic
             from excel_processor import ExcelProcessor
             return ExcelProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
+        elif suffix in FILE_TYPE_MAP:
+            return self.chunk_tree_sitter_file(file_path, suffix)
         else:
             try:
                 content = file_path.read_text(encoding="utf-8")
