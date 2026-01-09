@@ -269,12 +269,8 @@ class FileProcessor:
             content = self._ensure_text(chunk.get("content", ""))
             return f"CSS Rule:\n{content}"
         else:
-            # Generic fallback: use the type attribute as the label
-            type_label = chunk.get("type", "Unknown").replace("_", " ").title()
-            content = self._ensure_text(chunk.get("content", ""))
-            name = chunk.get("name")
-            header = f"{type_label}: {name}" if name else type_label
-            return f"{header}\nContent:\n{content}"
+            # Unknown chunk: turn it into a string representation
+            return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
 
     def chunk_python_file(self, file_path: Path) -> tuple[list, int]:
         """
