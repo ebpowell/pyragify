@@ -156,6 +156,7 @@ class PBIProcessor(FileProcessor):
         """
         Transforms raw relationship logs into semantic vectors
         by flattening the structure into human-readable sentences.
+        Returns a list of chunks (with embedded vectors) and the file line count.
         """
         # ---------------------------------------------------------
         # LAZY IMPORTS: Only load heavy libraries if processing TMDL Relationships File
@@ -164,11 +165,17 @@ class PBIProcessor(FileProcessor):
             import re
             from sentence_transformers import SentenceTransformer
         except ImportError:
-            raise ImportError()
+            # If dependencies are missing, log warnings but try to proceed or return empty
+            # For strict correctness, we might raise, but here we just return empty chunks
+            logger.warning("Missing dependencies for vectorize_relationships (sentence_transformers, etc).")
+            return [], 0
+
         # Read the file
         try:
             with open(file_path, "r", encoding="utf-8-sig") as f:
                 raw_data = f.read()
+            line_count = raw_data.count('\n') + 1
+
             # Initialize the embedding model
             model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -177,7 +184,7 @@ class PBIProcessor(FileProcessor):
             rel_blocks = re.split(r'relationship\s+', raw_data)[1:]
 
             processed_strings = []
-            metadata = []
+            rel_metadata_list = []
 
             for block in rel_blocks:
                 lines = block.strip().split('\n')
@@ -210,7 +217,7 @@ class PBIProcessor(FileProcessor):
                 processed_strings.append(semantic_description)
 
                 # Keep original data for the "Context" field in your Vector DB
-                metadata.append({
+                rel_metadata_list.append({
                     "id": rel_id,
                     "original_from": from_col,
                     "original_to": to_col,
@@ -218,11 +225,29 @@ class PBIProcessor(FileProcessor):
                 })
 
             # 4. Generate the actual vectors
-            embeddings = model.encode(processed_strings)
+            if processed_strings:
+                embeddings = model.encode(processed_strings)
+            else:
+                embeddings = []
 
-            return embeddings, processed_strings, metadata
+            # 5. Package into Chunks
+            chunks = []
+            for i, desc in enumerate(processed_strings):
+                meta = rel_metadata_list[i]
+                chunk = {
+                    "type": "model_relationships",
+                    "name": meta["id"],
+                    "content": desc,
+                    "embedding": embeddings[i], # Store vector directly in chunk
+                    "metadata": meta
+                }
+                chunks.append(chunk)
+
+            return chunks, line_count
+
         except Exception as e:
             logger.warning(f"Error processing relationships.tmdl {file_path}: {e}")
+            return [], 0
 
     def format_chunk(self, chunk: dict) -> str:
         """
