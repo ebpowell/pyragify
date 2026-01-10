@@ -268,6 +268,27 @@ class FileProcessor:
         elif chunk_type == "css_rule":
             content = self._ensure_text(chunk.get("content", ""))
             return f"CSS Rule:\n{content}"
+        elif chunk_type == "tmdl_relationships_map":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"TMDL Relationships Map:\n{content}"
+        elif chunk_type == "model_index":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Model Index:\n{content}"
+        elif chunk_type == "tmdl_table_summary":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"TMDL Table Summary:\n{content}"
+        elif chunk_type == "json":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"JSON:\n{content}"
+        elif chunk_type == "excel_function":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Excel Function:\n{content}"
+        elif chunk_type == "excel_pivots":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Excel Pivots:\n{content}"    
+        elif chunk_type == "excel_bridge":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Excel Bridge:\n{content}"
         else:
             # Unknown chunk: turn it into a string representation
             return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
