@@ -14,8 +14,8 @@ sys.path.append(str(src_path))
 from processor import RepoContentProcessor, FileProcessor
 
 if __name__ == "__main__":
-    repo_folder = '/home/ebpowell/temp/ABWC_Demo_work/'
-    repo_name = 'Model'
+    repo_folder = '/mnt/c/Users/UVP/'
+    repo_name = 'ITSD'
     repo_path = Path(repo_folder + repo_name)
     output_dir = Path(repo_folder + '/output')
     hashes_file = output_dir / "hashes.json"

@@ -280,15 +280,18 @@ class FileProcessor:
         elif chunk_type == "json":
             content = self._ensure_text(chunk.get("content", ""))
             return f"JSON:\n{content}"
-        elif chunk_type == "excel_function":
+        elif chunk_type == "excel_logic":
             content = self._ensure_text(chunk.get("content", ""))
-            return f"Excel Function:\n{content}"
-        elif chunk_type == "excel_pivots":
+            return f"Excel Logic:\n{content}"
+        elif chunk_type == "excel_pivot":
             content = self._ensure_text(chunk.get("content", ""))
-            return f"Excel Pivots:\n{content}"    
+            return f"Excel Pivot:\n{content}"
         elif chunk_type == "excel_bridge":
             content = self._ensure_text(chunk.get("content", ""))
             return f"Excel Bridge:\n{content}"
+        elif chunk_type == "excel_dependencies":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Excel Dependency:\n{content}"
         else:
             # Unknown chunk: turn it into a string representation
             return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
