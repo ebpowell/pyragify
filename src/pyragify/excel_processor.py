@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from .processor import FileProcessor
+from processor import FileProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +63,25 @@ class ExcelProcessor(FileProcessor):
 
             # 4. Extract Data Connections (Merged from ExcelQueryExtractor)
             connections = self._extract_connections(file_path)
-            for conn in connections:
+            if connections:
                 chunks.append({
                     "type": "excel_connection",
-                    "name": conn.get("name"),
-                    "content": conn
+                    "name": "External Connections",
+                    "content": connections
                 })
 
+            # fields = self._extract_field_metadata(file_path)
+            # if fields:
+            #     for key, value in fields:
+            #         chunks.append({"type": "excel_fields_metadata",
+            #                        "name": key,
+            #                        "fields": value})
+            lineage = self._extract_connections(file_path)
+            if lineage:
+                chunks.append({"type": "excel_lineage",
+                               "name": "External Lineage",
+                               "content": lineage
+                               })
             # Estimate 'lines' as number of populated rows across sheets
             line_count = sum(sheet.max_row for sheet in wb.worksheets)
 
@@ -239,7 +251,7 @@ class ExcelProcessor(FileProcessor):
         else:
             return None
 
-    def _extract_connections(self, file_path: Path) -> list:
+    def _extract_connections(self, file_path: Path) -> str:
         """
         Extracts database connection strings and command text.
         Merged from ExcelQueryExtractor logic.
@@ -271,7 +283,7 @@ class ExcelProcessor(FileProcessor):
                     # Iterate through connection definitions
                     for conn in root.findall('.//spr:connection', namespaces):
                         conn_data = {
-                            "name": conn.get('name'),
+                            "sheet": conn.get('name'),
                             "type": "Unknown",
                             "connection_string": "",
                             "command_text": ""
@@ -281,7 +293,7 @@ class ExcelProcessor(FileProcessor):
                         db_pr = conn.find('spr:dbPr', namespaces)
                         if db_pr is not None:
                             conn_data["type"] = "Database/SQL"
-                            conn_data["connection_string"] = db_pr.get('connection')
+                            conn_data["connection_string"] =db_pr.get('connection'),
                             conn_data["command_text"] = db_pr.get('command')
 
                         # OLAP Properties (DataCubes)
@@ -289,12 +301,102 @@ class ExcelProcessor(FileProcessor):
                         if olap_pr is not None:
                             conn_data["type"] = "OLAP/DataCube"
                             # OLAP connections often point to local connection files or specific providers
-
                         results.append(conn_data)
         except Exception as e:
             logger.warning(f"Error extracting connections from {file_path}: {e}")
+        output = f"### WORKBOOK: {file_path.name}\n" + "=" * 30 + "\n"
+        for conn in results:
+            output += f"## SHEET: {conn["sheet"]}\n"
+            output += f"* Connection Type: {conn["type"]}\n"
+            output += f"* Connection Connection String: {conn['connection_string']}\n"
+            output += f"* Connection Command: {conn['command_text']}\n\n"
+        return output
 
-        return results
+    # def _extract_field_metadata(self, file_path: Path) -> list:
+    #     """Extracts the SQL/MDX command text and connection details."""
+    #     import zipfile
+    #     import xml.etree.ElementTree as ET
+    #     ns = {'spr': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+    #     if not zipfile.is_zipfile(file_path):
+    #        return []
+    #     field_data = {}
+    #     with zipfile.ZipFile(file_path, 'r') as z:
+    #         # 1. Find all query table files
+    #         qt_files = [f for f in z.namelist() if f.startswith('xl/queryTables/queryTable')]
+    #
+    #         for qt_file in qt_files:
+    #             with z.open(qt_file) as f:
+    #                 tree = ET.parse(f)
+    #                 root = tree.getroot()
+    #
+    #                 table_name = root.get('name')
+    #                 fields = []
+    #
+    #                 # 2. Extract specific field info
+    #                 # queryTableFields contains the column-level metadata
+    #                 qt_fields = root.find('spr:queryTableFields', ns)
+    #                 if qt_fields is not None:
+    #                     for field in qt_fields.findall('spr:queryTableField', ns):
+    #                         fields.append({
+    #                             "id": field.get('id'),
+    #                             "name": field.get('name'),  # The display name in Excel
+    #                             "data_type": field.get('fillFormulas', 'Standard'),
+    #                             "is_filtered": field.get('filterColumn', '0') == '1'
+    #                         })
+    #
+    #                 field_data[table_name] = fields
+    #
+    #         return field_data
+
+    def _get_lineage_data(self, file_path: Path) -> str:
+        """Extracts and joins connections with query table field lists."""
+
+        import zipfile
+        import xml.etree.ElementTree as ET
+        ns = {'spr': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+        lineage = []
+        with zipfile.ZipFile(file_path, 'r') as z:
+            # 1. Extract Connections
+            connections = {}
+            if 'xl/connections.xml' in z.namelist():
+                with z.open('xl/connections.xml') as f:
+                    root = ET.parse(f).getroot()
+                    for conn in root.findall('.//spr:connection', ns):
+                        c_id = conn.get('id')
+                        db_pr = conn.find('spr:dbPr', ns)
+                        connections[c_id] = {
+                            "ConnectionName": conn.get('name'),
+                            "SQLQuery": db_pr.get('command') if db_pr is not None else "N/A"
+                        }
+
+            # 2. Extract QueryTables and Join with Connections
+            qt_files = [f for f in z.namelist() if f.startswith('xl/queryTables/queryTable')]
+            for qt_file in qt_files:
+                with z.open(qt_file) as f:
+                    root = ET.parse(f).getroot()
+                    c_id = root.get('connectionId')
+                    info = connections.get(c_id, {"ConnectionName": "Unknown", "SQLQuery": "N/A"})
+
+                    fields = root.find('spr:queryTableFields', ns)
+                    field_list = [field.get('name') for field in
+                                  fields.findall('spr:queryTableField', ns)] if fields is not None else []
+
+                    lineage.append({
+                        "Sheet": root.get('name'),
+                        "SourceConnection": info["ConnectionName"],
+                        "SQLLogic:": info["SQLQuery"],
+                        "Fields": ", ".join(field_list)
+                    })
+        if lineage:
+            output = f"### WORKBOOK: {file_path.name}\n" + "=" * 30 + "\n"
+            for line in lineage:
+                output += f"## SHEET: {line['Sheet']}\n"
+                output += f"* Connection String: {line['SourceConnection']}\n"
+                output += f"* Connection Logic: {line['SQLogic']}\n"
+                output += f"* Connection Fields: {line['Fields']}\n"
+            return output
+        else:
+            return []
 
     def format_chunk(self, chunk: dict) -> str:
         """
