@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from processor import FileProcessor
+from .processor import FileProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,15 @@ class ExcelProcessor(FileProcessor):
                     "type": "excel_dependencies",
                     "name": "External Dependencies",
                     "content": adv_logic
+                })
+
+            # 4. Extract Data Connections (Merged from ExcelQueryExtractor)
+            connections = self._extract_connections(file_path)
+            for conn in connections:
+                chunks.append({
+                    "type": "excel_connection",
+                    "name": conn.get("name"),
+                    "content": conn
                 })
 
             # Estimate 'lines' as number of populated rows across sheets
@@ -230,6 +239,63 @@ class ExcelProcessor(FileProcessor):
         else:
             return None
 
+    def _extract_connections(self, file_path: Path) -> list:
+        """
+        Extracts database connection strings and command text.
+        Merged from ExcelQueryExtractor logic.
+        """
+        import zipfile
+        import xml.etree.ElementTree as ET
+
+        if not zipfile.is_zipfile(file_path):
+            return []
+
+        results = []
+        namespaces = {
+            'main': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+            'spr': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+        }
+        
+        try:
+            with zipfile.ZipFile(file_path, 'r') as z:
+                # The logic is typically stored in xl/connections.xml
+                conn_path = 'xl/connections.xml'
+                
+                if conn_path not in z.namelist():
+                    return []
+
+                with z.open(conn_path) as f:
+                    tree = ET.parse(f)
+                    root = tree.getroot()
+
+                    # Iterate through connection definitions
+                    for conn in root.findall('.//spr:connection', namespaces):
+                        conn_data = {
+                            "name": conn.get('name'),
+                            "type": "Unknown",
+                            "connection_string": "",
+                            "command_text": ""
+                        }
+
+                        # Database Properties (SQL Server, etc.)
+                        db_pr = conn.find('spr:dbPr', namespaces)
+                        if db_pr is not None:
+                            conn_data["type"] = "Database/SQL"
+                            conn_data["connection_string"] = db_pr.get('connection')
+                            conn_data["command_text"] = db_pr.get('command')
+
+                        # OLAP Properties (DataCubes)
+                        olap_pr = conn.find('spr:olapPr', namespaces)
+                        if olap_pr is not None:
+                            conn_data["type"] = "OLAP/DataCube"
+                            # OLAP connections often point to local connection files or specific providers
+
+                        results.append(conn_data)
+        except Exception as e:
+            logger.warning(f"Error extracting connections from {file_path}: {e}")
+
+        return results
+
     def format_chunk(self, chunk: dict) -> str:
         """
         Format a chunk into plain text for saving.
@@ -244,4 +310,12 @@ class ExcelProcessor(FileProcessor):
             header = type_map[chunk_type]
             return (f"{header}: {chunk.get('name')}\n"
                     f"Content:\n{self._ensure_text(chunk.get('content', ''))}")
+        
+        if chunk_type == "excel_connection":
+            content = chunk.get("content", {})
+            return (f"Excel Connection: {chunk.get('name')}\n"
+                    f"Type: {content.get('type')}\n"
+                    f"Connection String: {content.get('connection_string')}\n"
+                    f"Command Text: {content.get('command_text')}\n")
+
         return super().format_chunk(chunk)
