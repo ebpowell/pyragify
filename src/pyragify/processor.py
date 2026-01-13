@@ -7,7 +7,7 @@ import logging
 from io import StringIO
 from pathlib import Path
 from collections import defaultdict
-from .utils import validate_directory
+from utils import validate_directory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -292,6 +292,15 @@ class FileProcessor:
         elif chunk_type == "excel_dependencies":
             content = self._ensure_text(chunk.get("content", ""))
             return f"Excel Dependency:\n{content}"
+        elif chunk_type == "excel_connection":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Excel Connection:\n{content}"
+        # elif chunk_type == "excel_field_metadata":
+        #     content = self._ensure_text(chunk.get("content", ""))
+        #     return f"Excel Field Metadata:\n{content}"
+        elif chunk_type == "excel_lineage":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"Excel Lineage:\n{content}"
         else:
             # Unknown chunk: turn it into a string representation
             return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
