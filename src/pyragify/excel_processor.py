@@ -1,5 +1,11 @@
 import logging
+import os
 from pathlib import Path
+
+from openpyxl.styles.builtins import output
+from transformers import DataProcessor
+from triton import Config
+
 from processor import FileProcessor
 
 logger = logging.getLogger(__name__)
@@ -421,3 +427,67 @@ class ExcelProcessor(FileProcessor):
                     f"Command Text: {content.get('command_text')}\n")
 
         return super().format_chunk(chunk)
+
+class ExcelDataProcessor:
+    """ Tool to re-format the data from a Spreadsheet into AI parsable format. ."""
+
+    def __init__(self, file_path) -> None:
+        self.file_path = file_path
+        # Generate the list of Excel files to process
+        lst_excel = []
+        lst_files = os.listdir(file_path)
+        self.lst_excel = [filename for filename in lst_files if Path(filename).suffix == ".xlsx"]
+
+
+    def sanitize_spreadsheet_for_llm(self, output_path):
+        import openpyxl
+        import re
+        output_path = os.path.join(output_path,'excel')
+        for filename in self.lst_excel:
+            wb = openpyxl.load_workbook(os.path.join(self.file_path, filename))
+            outfile = os.path.join(output_path, filename)
+
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+
+                # 1. Unmerge cells and propagate values
+                merged_ranges = list(ws.merged_cells.ranges)
+                for merged_range in merged_ranges:
+                    # Get the value from the top-left cell of the merge
+                    top_left_value = ws.cell(row=merged_range.min_row, column=merged_range.min_col).value
+                    ws.unmerge_cells(str(merged_range))
+
+                    # Fill all previously merged cells with the same value
+                    for row in range(merged_range.min_row, merged_range.max_row + 1):
+                        for col in range(merged_range.min_col, merged_range.max_col + 1):
+                            ws.cell(row=row, column=col).value = top_left_value
+
+                # 2. Clean Headers and Cell Content
+                for row in ws.iter_rows():
+                    for cell in row:
+                        if isinstance(cell.value, str):
+                            # Remove line breaks, tabs, and Excel-specific artifacts
+                            cleaned = re.sub(r'[\r\n\t]+', ' ', cell.value)
+                            cleaned = cleaned.replace('_x000D_', '')
+                            cell.value = cleaned.strip()
+            wb.save(outfile)
+            self.save_for_llm_reasoning(outfile, output_path)
+            logger.info(f"Cleaned Spreadsheet {filename} has been saved to {output_path}")
+        return None
+
+    def save_for_llm_reasoning(self, excel_file, output_path):
+        import openpyxl
+
+        stub = Path(excel_file).stem
+        wb = openpyxl.load_workbook(excel_file, data_only=True)
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            headers = [cell.value for cell in ws[1]]  # Assumes row 1 is headers
+            output_txt = Path(output_path).joinpath(stub+'_'+sheet_name+'.txt')
+            with open(output_txt, 'w', encoding='utf-8') as f:
+                for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                    f.write(f"--- Row {row_idx} ---\n")
+                    for header, value in zip(headers, row):
+                        f.write(f"{header}: {value}\n")
+                    f.write("\n")
+
