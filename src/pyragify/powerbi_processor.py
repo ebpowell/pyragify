@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 import re
+import textwrap
 from processor import FileProcessor
 
 logger = logging.getLogger(__name__)
@@ -38,9 +39,14 @@ class PBIProcessor(FileProcessor):
 
             # Determine Table Name
             name = "Unknown"
-            match = re.search(r"^table\s+['\"]?([^'\"]+)['\"]?", content, re.MULTILINE)
+            # pattern = r"^table\s+['\"]?(.+?)['\"]?\n\n\t"
+            pattern = r"^table\s+(['\"]?)(.*?)\1(?=\s*\n\n\t)"
+            match = re.search(pattern, content, re.MULTILINE)
+            # match = re.search(r"^table\s+['\"]?([^'\"]+)['\"]?\n\n\t", content, re.MULTILINE)
             if match:
-                name = match.group(1).strip()
+                # Split the captured group at the specific sequence and take the first part
+                # name = match.group(1).split('\n\n\t')[0].strip()
+                name = match.group(2).strip()
             # If no table found, it might be a different type of object, try to name it by filename
             if name == "Unknown":
                 name = file_path.stem
@@ -49,39 +55,59 @@ class PBIProcessor(FileProcessor):
             if "LocalDateTable" in name or "DateTableTemplate" in name:
                 return [], line_count
 
-            markdown_output = f"## Table: {name}\n"
+            markdown_output = f"### Table: {name}\n"
 
-            # Identify Data Source (Power Query / M-Code)
-            # RegEx: looking for 'partition <name> = m' ... 'source = let ... in'
-            # Adapting User's RegEx: source =\s+let\n(.*?)\nin
-            # Robust RegEx to handle indentation and newlines found in TMDL
-            source_match = re.search(r"source\s*=\s*let\s*(.*?)\s*in", content, re.DOTALL | re.IGNORECASE)
-            if source_match:
-                m_code = source_match.group(1).strip()
-                markdown_output += "### Data Lineage & Transformations\n"
-                markdown_output += "```powerquery\n" + m_code + "\n```\n"
+            # Regex to capture Column name, Type, and its indented body
+            # Logic Breakdown:
+            # 1. ^\s*column\s+      -> Starts with 'column' (ignoring leading indentation)
+            # 2. (['\"]?)           -> Group 1: Capture optional opening quote
+            # 3. (.*?)              -> Group 2: The Column Name (lazy)
+            # 4. \1                 -> Match the same quote from Group 1
+            # 5. \s+                -> Required space between Name and DataType
+            # 6. (.*?)              -> Group 3: The DataType and everything else...
+            # 7. (?=\n\s*(?:column|measure|partition|hierarchy|annotation|lineageTag)|$) -> Lookahead stop
+            column_pattern = r"^\s*column\s+(['\"]?)(.*?)\1\s+(.*?)(?=\n\s*(?:column|measure|partition|hierarchy|annotation|lineageTag)|$)"
 
-                # --- NEW LOGIC: External Sources ---
-                urls = set(re.findall(r'Web\.Contents\("([^"]+)"\)', m_code))
-                if urls:
-                    markdown_output += "\n#### External Sources\n"
-                    for url in urls:
-                        markdown_output += f"* **External Source:** {url}\n"
+            columns = re.findall(column_pattern, content, re.DOTALL | re.MULTILINE | re.IGNORECASE)
+            if columns:
+                markdown_output += "### Data Schema (Columns)\n"
+                markdown_output += "| Column Name | Data Type | Properties |\n"
+                markdown_output += "| :--- | :--- | :--- |\n"
 
-                # --- NEW LOGIC: Transformation Steps ---
-                # Looking for #"Step Name" = ...
-                steps = re.findall(r'#"(.*?)"\s*=\s*(.*?)(?:,|\n\t\tin)', m_code, re.DOTALL)
-                if steps:
-                    markdown_output += "\n#### Transformation Steps\n"
-                    for step_name, logic in steps:
-                        # Truncate logic for readability if too long
-                        clean_logic = logic.strip().replace('\n', ' ')
-                        if len(clean_logic) > 100:
-                            clean_logic = clean_logic[:100] + "..."
-                        markdown_output += f"* **{step_name}**: `{clean_logic}`\n"
+                for quote, c_name, c_body in columns:
+                    clean_name = c_name.strip().strip("'\"")
+
+                    # Split the body to separate DataType from the rest
+                    body_parts = c_body.strip().split('\n')
+                    data_type = body_parts[0].strip()
+
+                    # The rest are properties like 'summarizeBy' or 'sourceColumn'
+                    properties = [p.strip() for p in body_parts[1:] if p.strip()]
+
+                    # Format for your Markdown output
+                    prop_list = ", ".join(properties) if properties else "None"
+                    markdown_output += f"| {clean_name} | {data_type} | {prop_list} |\n"
+
+
+            """
+            Extracts partition names, individual properties, and the source code.
+            """
+
+            lst_partitions = self.extract_partition_with_file_details(content)
+            if lst_partitions:
+                markdown_output += f"### Partitions \n"
+                for partition in lst_partitions:
+                    markdown_output += f"## Partition: {partition['partition_name']}\n"
+                    markdown_output += f"# Connection String: {partition['connection_string']}\n"
+                    markdown_output += f"# Data Source Filename: {partition['filename_only']}\n"
+                    markdown_output += f"# Logic: {partition['full_logic']}\n\n"
+                # partitions_found.append(partition_data)
 
             # --- NEW LOGIC: Master Join Keys ---
             # Check the ENTIRE table content for these keys (columns, etc)
+            ##################### FIX ME #################################################################################
+            # This doesn't make a terrible lot of sense - need to revisit whether it is even needed
+            
             master_keys = ["Division ID", "Organization_ID", "ProjectID", "Directorate ID", "BaseRSS"]
             found_keys = [key for key in master_keys if key in content]
             
@@ -89,25 +115,57 @@ class PBIProcessor(FileProcessor):
                 markdown_output += "\n### Master Join Keys\n"
                 markdown_output += "* **Keys Found:** " + ", ".join(found_keys) + "\n"
 
-
+            #############################################################################################################
             # Identify DAX Measures
-            # User's RegEx: measure (.*?) = (.*?)(?=\n\t\w+:|\n\n|$)
-            # Raw TMDL: measure 'Name' = Expression ...
-            # We need to match 'measure' keyword, then Name (quoted or not), then =, then Expression
-            # until next keyword or end of block.
-            # Simplified approach: Look for lines starting with 'measure'
-            measures = re.findall(r"^\s*measure\s+(.*?)\s*=\s*(.*?)(?=\s*(?:\n\s*\w+)|$)", content, re.DOTALL | re.MULTILINE)
-            if measures:
-                markdown_output += "### Business Logic (DAX Measures)\n"
-                for m_name, m_logic in measures:
-                    # Clean up name if quoted
-                    clean_name = m_name.strip().strip("'\"")
-                    # Clean up logic (remove line continuations or extra spaces if needed)
-                    # For now, just take what's captured
-                    clean_logic = m_logic.strip()
-                    markdown_output += f"* **{clean_name}**: `{clean_logic}`\n"
+            # This pattern captures the name and the logic
+            # It stops when it sees a line starting with a new keyword
+            # or a property that isn't indented (like 'formatString' or 'displayFolder').
+            # Updated Regex
+            # 1. (.*?) with re.DOTALL captures all newlines in the DAX.
+            # 2. The Lookahead now only stops for specific TMDL object keywords.
+            # measure_pattern = r"^\s*measure\s+(['\"]?)(.*?)\1\s*=\s*(.*?)(?=\n\s*(?:measure|column|partition|hierarchy|annotation|lineageTag|formatString|displayFolder)|$)"
+            #
+            # measures = re.findall(measure_pattern, content, re.DOTALL | re.MULTILINE | re.IGNORECASE)
+            # if measures:
+            #     markdown_output += "### Business Logic (DAX Measures)\n"
+            #     for quote, m_name, m_logic in measures:
+            #         clean_name = m_name.strip()
+            #
+            #         # Split by newline and handle potential metadata if the lookahead was too broad
+            #         # We want to ensure we don't capture 'formatString:' as part of the DAX
+            #         logic_lines = m_logic.split('\n')
+            #         final_dax_lines = []
+            #
+            #         for line in logic_lines:
+            #             # If we hit a line that looks like a TMDL property, stop
+            #             if re.match(r"^\s*\w+\s*:", line):
+            #                 break
+            #             final_dax_lines.append(line)
+            #
+            #         clean_logic = "\n".join(final_dax_lines).strip()
+            #
+            #         # Use dedent to clean up the leading spaces from the file structure
+            #         formatted_dax = textwrap.dedent(clean_logic)
+            #
+            #         markdown_output += f"* **{clean_name}**\n  ```dax\n  {formatted_dax}\n  ```\n"
+            lst_measures = self.extract_measures_comprehensive(content)
+            if lst_measures:
+                markdown_output += "## Business Logic (DAX Measures)\n\n"
+                for m in lst_measures:
+                    markdown_output += f"### {m['name']}\n"
+                    markdown_output += f"**Description**: {m['description']}\n\n"
 
+                    # Metadata Table for a clean look
+                    markdown_output += "| Attribute | Value |\n"
+                    markdown_output += "| :--- | :--- |\n"
+                    if m['format_string']:
+                        markdown_output += f"| **Format** | `{m['format_string']}` |\n"
+                    markdown_output += f"| **Folder** | `{m['display_folder']}` |\n"
+                    if m['lineage_tag']:
+                        markdown_output += f"| **Lineage Tag** | `{m['lineage_tag']}` |\n"
 
+                    markdown_output += f"\n**DAX Expression:**\n```dax\n{m['dax']}\n```\n\n"
+                    markdown_output += "---\n"
             chunk = {
                 "type": "tmdl_table_summary",
                 "name": name,
@@ -262,3 +320,84 @@ class PBIProcessor(FileProcessor):
              return f"{prefix}{type_label}: {chunk.get('name')}\nContent:\n{content}"
         
         return super().format_chunk(chunk)
+
+
+    def extract_partition_with_file_details(self, content):
+        partitions_found = []
+
+        # 1. Capture the partition block (Standard TMDL block)
+        partition_pattern = r"^\s*partition\s+(['\"]?)(.*?)\1\s*=\s*m((?:\n\s+.*)+)"
+        matches = re.findall(partition_pattern, content, re.MULTILINE | re.IGNORECASE)
+
+        for quote, p_name, p_body in matches:
+            # 2. Extract the TRUE Source Line (The connection string)
+            # Look for the capitalized 'Source =' variable in the M code
+            true_source_match = re.search(r"^\s*Source\s*=\s*(.*)", p_body, re.MULTILINE)
+            true_source_path = true_source_match.group(1).strip() if true_source_match else ""
+
+            # 3. Extract FILENAME ONLY (The text inside the first pair of quotes)
+            # This grabs "C:\Data.csv" out of Csv.Document(File.Contents("C:\Data.csv"))
+            filename_match = re.search(r'\"(.*?)\"', true_source_path)
+            filename_only = filename_match.group(1) if filename_match else "Inlined/System"
+
+            # 4. Extract the Full Logic
+            logic_match = re.search(r"(let\s+.*in\s+.*)", p_body, re.DOTALL | re.IGNORECASE)
+            source_logic = textwrap.dedent(logic_match.group(1)).strip() if logic_match else p_body.strip()
+
+            partitions_found.append({
+                "partition_name": p_name.strip(),
+                "connection_string": true_source_path,
+                "filename_only": filename_only,
+                "full_logic": source_logic
+            })
+
+        return partitions_found
+
+
+    def extract_measures_comprehensive(self, content):
+        # Capture the entire block until the next major TMDL object
+        measure_pattern = r"^\s*measure\s+(['\"]?)(.*?)\1\s*=\s*(.*?)(?=\n\s*(?:measure|column|partition|table|hierarchy)|$)"
+
+        matches = re.findall(measure_pattern, content, re.DOTALL | re.MULTILINE | re.IGNORECASE)
+
+        extracted_measures = []
+
+        for quote, name, body in matches:
+            measure_data = {
+                "name": name.strip(),
+                "dax": "",
+                "description": "No description provided.",
+                "format_string": None,
+                "display_folder": "Home",
+                "lineage_tag": None
+            }
+
+            lines = body.split('\n')
+            dax_lines = []
+            metadata_started = False
+
+            for line in lines:
+                # Match the pattern 'key: value'
+                prop_match = re.match(r"^\s*(description|formatString|displayFolder|lineageTag)\s*:\s*(.*)", line, re.I)
+
+                if prop_match:
+                    metadata_started = True
+                    key = prop_match.group(1).lower()
+                    val = prop_match.group(2).strip().strip('"')
+
+                    if key == "description":
+                        measure_data["description"] = val
+                    elif key == "formatstring":
+                        measure_data["format_string"] = val
+                    elif key == "displayfolder":
+                        measure_data["display_folder"] = val
+                    elif key == "lineagetag":
+                        measure_data["lineage_tag"] = val
+                elif not metadata_started:
+                    # If we haven't hit a metadata key, we are still inside the DAX formula
+                    dax_lines.append(line)
+
+            measure_data["dax"] = textwrap.dedent("\n".join(dax_lines)).strip()
+            extracted_measures.append(measure_data)
+
+        return extracted_measures
