@@ -30,6 +30,9 @@ class PBIProcessor(FileProcessor):
             return self.chunk_model_tmdl(file_path)
         elif file_path.name == "relationships.tmdl":
             return self.vectorize_relationships(file_path)
+        # Skip the LocalDateTables
+        elif "LocalDateTable" in file_path.name:
+            return None
 
         # For standard table TMDL files
         try:
@@ -125,30 +128,8 @@ class PBIProcessor(FileProcessor):
             # 2. The Lookahead now only stops for specific TMDL object keywords.
             # measure_pattern = r"^\s*measure\s+(['\"]?)(.*?)\1\s*=\s*(.*?)(?=\n\s*(?:measure|column|partition|hierarchy|annotation|lineageTag|formatString|displayFolder)|$)"
             #
-            # measures = re.findall(measure_pattern, content, re.DOTALL | re.MULTILINE | re.IGNORECASE)
-            # if measures:
-            #     markdown_output += "### Business Logic (DAX Measures)\n"
-            #     for quote, m_name, m_logic in measures:
-            #         clean_name = m_name.strip()
-            #
-            #         # Split by newline and handle potential metadata if the lookahead was too broad
-            #         # We want to ensure we don't capture 'formatString:' as part of the DAX
-            #         logic_lines = m_logic.split('\n')
-            #         final_dax_lines = []
-            #
-            #         for line in logic_lines:
-            #             # If we hit a line that looks like a TMDL property, stop
-            #             if re.match(r"^\s*\w+\s*:", line):
-            #                 break
-            #             final_dax_lines.append(line)
-            #
-            #         clean_logic = "\n".join(final_dax_lines).strip()
-            #
-            #         # Use dedent to clean up the leading spaces from the file structure
-            #         formatted_dax = textwrap.dedent(clean_logic)
-            #
-            #         markdown_output += f"* **{clean_name}**\n  ```dax\n  {formatted_dax}\n  ```\n"
-            lst_measures = self.extract_measures_comprehensive(content)
+
+            lst_measures = self.extract_measures_string_split(content)
             if lst_measures:
                 markdown_output += "## Business Logic (DAX Measures)\n\n"
                 for m in lst_measures:
@@ -160,7 +141,7 @@ class PBIProcessor(FileProcessor):
                     markdown_output += "| :--- | :--- |\n"
                     if m['format_string']:
                         markdown_output += f"| **Format** | `{m['format_string']}` |\n"
-                    markdown_output += f"| **Folder** | `{m['display_folder']}` |\n"
+                    # markdown_output += f"| **Folder** | `{m['display_folder']}` |\n"
                     if m['lineage_tag']:
                         markdown_output += f"| **Lineage Tag** | `{m['lineage_tag']}` |\n"
 
@@ -189,7 +170,7 @@ class PBIProcessor(FileProcessor):
             tables = []
             for line in content.splitlines():
                 stripped = line.strip()
-                if stripped.startswith("ref table"):
+                if stripped.startswith("ref table") and "LocalDateTable" not in stripped:
                     # ref table <TableName>
                     parts = stripped.split(maxsplit=2)
                     if len(parts) >= 3:
@@ -253,15 +234,16 @@ class PBIProcessor(FileProcessor):
             for r_id, r_from, r_to in relationships:
                 r_from = r_from.strip()
                 r_to = r_to.strip()
-                
-                # Format: * **Join:** `source` → `target`
-                markdown_output += f"* **Join:** `{r_from}` → `{r_to}`\n"
-                
-                # Create a sentence for embedding context (optional, but good for retrieval)
-                # Cleaning toColumn for semantic match (e.g. LocalDateTable -> DateTable)
-                to_clean = re.sub(r"LocalDateTable_[a-z0-9-]+", "DateTable", r_to)
-                sentence = f"Relationship {r_id}: {r_from} links to {to_clean}."
-                semantic_sentences.append(sentence)
+                # Strip out JOINS to the LocalDateTables
+                if "LocalDateTable" not in r_from and "LocalDateTable" not in r_to:
+                    # Format: * **Join:** `source` → `target`
+                    markdown_output += f"* **Join:** `{r_from}` → `{r_to}`\n"
+
+                    # Create a sentence for embedding context (optional, but good for retrieval)
+                    # Cleaning toColumn for semantic match (e.g. LocalDateTable -> DateTable)
+                    # to_clean = re.sub(r"LocalDateTable_[a-z0-9-]+", "DateTable", r_to)
+                    sentence = f"Relationship {r_id}: {r_from} links to {r_to}."
+                    semantic_sentences.append(sentence)
 
             # Generate embedding for the WHOLE map (aggregate or single string?)
             # Plan said: "Compute embedding for this summary string."
@@ -344,60 +326,279 @@ class PBIProcessor(FileProcessor):
             logic_match = re.search(r"(let\s+.*in\s+.*)", p_body, re.DOTALL | re.IGNORECASE)
             source_logic = textwrap.dedent(logic_match.group(1)).strip() if logic_match else p_body.strip()
 
+
             partitions_found.append({
                 "partition_name": p_name.strip(),
                 "connection_string": true_source_path,
                 "filename_only": filename_only,
-                "full_logic": source_logic
+                "full_logic": self.truncate_m_logic(source_logic)
             })
 
         return partitions_found
 
-
-    def extract_measures_comprehensive(self, content):
-        # Capture the entire block until the next major TMDL object
-        measure_pattern = r"^\s*measure\s+(['\"]?)(.*?)\1\s*=\s*(.*?)(?=\n\s*(?:measure|column|partition|table|hierarchy)|$)"
-
-        matches = re.findall(measure_pattern, content, re.DOTALL | re.MULTILINE | re.IGNORECASE)
-
+    def extract_measures_string_split(self, content):
         extracted_measures = []
 
-        for quote, name, body in matches:
-            measure_data = {
-                "name": name.strip(),
-                "dax": "",
-                "description": "No description provided.",
-                "format_string": None,
-                "display_folder": "Home",
-                "lineage_tag": None
-            }
+        # 1. Split the file into chunks based on your delimiter
+        # This separates tables, columns, and measures into individual strings
+        chunks = content.split('\n\n\t')
 
-            lines = body.split('\n')
-            dax_lines = []
-            metadata_started = False
+        for chunk in chunks:
+            # 2. Only process chunks that start with 'measure'
+            line = chunk.strip()
+            if line.lower().startswith('measure '):
 
-            for line in lines:
-                # Match the pattern 'key: value'
-                prop_match = re.match(r"^\s*(description|formatString|displayFolder|lineageTag)\s*:\s*(.*)", line, re.I)
+                # 3. Separate the Header (name/logic) from the Properties
+                # We split by the first newline to isolate the DAX header
+                lines = line.split('\n')
+                header = lines[0]  # e.g., "measure 'Total Sales' = SUM(Sales[Amount])"
 
-                if prop_match:
-                    metadata_started = True
-                    key = prop_match.group(1).lower()
-                    val = prop_match.group(2).strip().strip('"')
+                # 4. Extract Name and First Line of DAX
+                # Split by the first '='
+                header_parts = header.split('=', 1)
+                name = header_parts[0].replace('measure', '').strip().strip("'\"")
+                first_line_dax = header_parts[1].strip() if len(header_parts) > 1 else ""
 
-                    if key == "description":
-                        measure_data["description"] = val
-                    elif key == "formatstring":
-                        measure_data["format_string"] = val
-                    elif key == "displayfolder":
-                        measure_data["display_folder"] = val
-                    elif key == "lineagetag":
-                        measure_data["lineage_tag"] = val
-                elif not metadata_started:
-                    # If we haven't hit a metadata key, we are still inside the DAX formula
-                    dax_lines.append(line)
+                # 5. Collect the rest of the DAX until we hit TMDL properties
+                dax_body = [first_line_dax]
+                metadata = {}
 
-            measure_data["dax"] = textwrap.dedent("\n".join(dax_lines)).strip()
-            extracted_measures.append(measure_data)
+                for extra_line in lines[1:]:
+                    # Check if the line is a property (contains a colon and isn't a DAX calc)
+                    if ':' in extra_line and not any(char in extra_line for char in '()[]{}'):
+                        key, val = extra_line.split(':', 1)
+                        metadata[key.strip().lower()] = val.strip().strip('"')
+                    else:
+                        dax_body.append(extra_line)
+
+                # 6. Final Clean up
+                extracted_measures.append({
+                    "name": name,
+                    "dax": textwrap.dedent("\n".join(dax_body)).strip(),
+                    "description": metadata.get("description", "No description"),
+                    "lineage_tag": metadata.get("lineagetag", None),
+                    "format_string": metadata.get("formatstring", None)
+                })
 
         return extracted_measures
+
+    def master_tmdl_parser(self,content):
+        # Dictionary to hold the final model structure
+        model_data = {
+            "table_name": "Unknown",
+            "measures": [],
+            "columns": [],
+            "partitions": []
+        }
+
+        # 1. Extract the Table Name first (usually at the very top)
+        table_match = re.search(r"^table\s+['\"]?([^'\"]+)['\"]?", content, re.MULTILINE)
+        if table_match:
+            model_data["table_name"] = table_match.group(1).strip()
+
+        # 2. Split the file into chunks using your delimiter
+        chunks = content.split('\n\n\t')
+
+        for chunk in chunks:
+            lines = chunk.strip().split('\n')
+            if not lines:
+                continue
+                # If the chunk belongs to an internal table, skip it entirely
+            if "LocalDateTable_" in chunk or "DateTableTemplate_" in chunk:
+                    continue
+            first_line = lines[0].strip().lower()
+
+            # --- PROCESS MEASURES ---
+            if first_line.startswith('measure '):
+                header_parts = lines[0].split('=', 1)
+                name = header_parts[0].replace('measure', '', 1).strip().strip("'\"")
+
+                dax_lines = [header_parts[1].strip()] if len(header_parts) > 1 else []
+                metadata = {}
+
+                for extra_line in lines[1:]:
+                    # Differentiate between DAX and Metadata (Metadata has ':' and no DAX brackets)
+                    if ':' in extra_line and not any(c in extra_line for c in '()[]{}'):
+                        k, v = extra_line.split(':', 1)
+                        metadata[k.strip().lower()] = v.strip().strip('"')
+                    else:
+                        dax_lines.append(extra_line)
+
+                model_data["measures"].append({
+                    "name": name,
+                    "logic": textwrap.dedent("\n".join(dax_lines)).strip(),
+                    "description": metadata.get("description", ""),
+                    "lineage_tag": metadata.get("lineagetag", ""),
+                    "format_string": metadata.get("formatstring", "")
+                })
+
+            # --- PROCESS COLUMNS ---
+            elif first_line.startswith('column '):
+                # Format: column Name DataType
+                header_content = lines[0].replace('column', '', 1).strip()
+                # Handle quoted names with spaces
+                name_match = re.search(r"(['\"]?)(.*?)\1\s+(.*)", header_content)
+
+                if name_match:
+                    name = name_match.group(2).strip()
+                    data_type = name_match.group(3).strip()
+
+                    metadata = {}
+                    for extra_line in lines[1:]:
+                        if ':' in extra_line:
+                            k, v = extra_line.split(':', 1)
+                            metadata[k.strip().lower()] = v.strip().strip('"')
+
+                    model_data["columns"].append({
+                        "name": name,
+                        "data_type": data_type,
+                        "description": metadata.get("description", ""),
+                        "source_column": metadata.get("sourcecolumn", name),
+                        "lineage_tag": metadata.get("lineagetag", "")
+                    })
+
+            # --- PROCESS PARTITIONS ---
+            elif first_line.startswith('partition '):
+                # Format: partition Name = m
+                header_parts = lines[0].split('=', 1)
+                name = header_parts[0].replace('partition', '', 1).strip().strip("'\"")
+
+                # Find the 'Source =' line within the M code
+                # Note: We look for the capitalized 'Source =' for the connection string
+                m_body = "\n".join(lines[1:])
+                true_source_match = re.search(r"^\s*Source\s*=\s*(.*)", m_body, re.MULTILINE)
+                conn_string = true_source_match.group(1).strip() if true_source_match else "Inlined"
+
+                # Extract filename from quotes in the connection string
+                fn_match = re.search(r'\"(.*?)\"', conn_string)
+
+                model_data["partitions"].append({
+                    "name": name,
+                    "connection_string": conn_string,
+                    "file_name": fn_match.group(1) if fn_match else "N/A",
+                    "full_m_logic": textwrap.dedent(m_body).strip()
+                })
+
+        return model_data
+
+    # def generate_tmdl_markdown(self, model_data):
+    #     """
+    #     Converts model_data dictionary into a formatted Markdown report.
+    #     """
+    #     md = []
+    #
+    #     # --- 1. Header & Summary ---
+    #     md.append(f"# Technical Documentation: {model_data['table_name']}")
+    #     md.append(f"\n**Entity Type:** `Table` | **Source Type:** `TMDL Definition` | **Generated Date:** 2026")
+    #
+    #     md.append("\n## Summary")
+    #     md.append(f"* **Total Columns:** {len(model_data['columns'])}")
+    #     md.append(f"* **Total Measures:** {len(model_data['measures'])}")
+    #     md.append(f"* **Data Partitions:** {len(model_data['partitions'])}")
+    #
+    #     # --- 2. Data Partitions (Source Information) ---
+    #     if model_data["partitions"]:
+    #         md.append("\n## Data Connectivity")
+    #         for p in model_data["partitions"]:
+    #             md.append(f"### Partition: {p['name']}")
+    #             md.append(f"* **Connection Target:** `{p['file_name']}`")
+    #             md.append(f"* **Full String:** `{p['connection_string']}`")
+    #             md.append("\n**M Transformation Logic:**")
+    #             md.append(f"```powerquery\n{p['full_m_logic']}\n```")
+    #
+    #     # --- 3. Column Schema ---
+    #     if model_data["columns"]:
+    #         md.append("\n## Data Schema (Columns)")
+    #         md.append("| Name | Type | Source Column | Lineage Tag |")
+    #         md.append("| :--- | :--- | :--- | :--- |")
+    #         for c in model_data["columns"]:
+    #             desc = f"<br/>*{c['description']}*" if c['description'] else ""
+    #             md.append(
+    #                 f"| **{c['name']}**{desc} | `{c['data_type']}` | `{c['source_column']}` | `{c['lineage_tag']}` |")
+    #
+    #     # --- 4. Business Logic (Measures) ---
+    #     if model_data["measures"]:
+    #         md.append("\n## Business Logic (DAX Measures)")
+    #         for m in model_data["measures"]:
+    #             md.append(f"### {m['name']}")
+    #             if m['description']:
+    #                 md.append(f"> {m['description']}")
+    #
+    #             # Metadata line
+    #             meta = []
+    #             if m['format_string']: meta.append(f"**Format:** `{m['format_string']}`")
+    #             if m['lineage_tag']: meta.append(f"**ID:** `{m['lineage_tag']}`")
+    #             if meta:
+    #                 md.append(" | ".join(meta))
+    #
+    #             md.append(f"\n```dax\n{m['logic']}\n```")
+    #             md.append("\n---")
+    #
+    #     return "\n".join(md)
+
+    def prune_internal_tables(self, model_data):
+        """
+        Removes auto-generated Power BI date tables from the model summary.
+        """
+        # Define prefixes for internal Power BI artifacts
+        internal_prefixes = ("LocalDateTable_", "DateTableTemplate_")
+
+        # 1. Prune the master Table List/Index if you have one
+        if "table_index" in model_data:
+            model_data["table_index"] = [
+                t for t in model_data["table_index"]
+                if not t.startswith(internal_prefixes)
+            ]
+
+        # 2. Prune Columns (if any were captured from these tables)
+        model_data["columns"] = [
+            c for c in model_data["columns"]
+            if not any(p in c.get("table_name", "") for p in internal_prefixes)
+        ]
+
+        # 3. Prune Relationships (This is the most impactful cleanup)
+        # Most relationships in your map were connecting to these hidden tables.
+        if "relationships" in model_data:
+            model_data["relationships"] = [
+                r for r in model_data["relationships"]
+                if not any(p in r for p in internal_prefixes)
+            ]
+
+        return model_data
+
+    import re
+
+    def truncate_m_logic(self, m_code, max_lines=10):
+        """
+        Truncates repetitive Power Query transformation steps (Changed Type, Renamed Columns)
+        while preserving the Source and the final 'in' result.
+        """
+        lines = m_code.split('\n')
+
+        # If the logic is already short, return it as is
+        if len(lines) <= max_lines:
+            return m_code
+
+        truncated_lines = []
+        # Identify patterns of repetitive column lists: {"Col1", type text}, {"Col2", type int}
+        # This regex looks for the common Power Query list-of-lists format
+        repetition_pattern = r'\{".*?",\s*.*?\}'
+
+        for line in lines:
+            # Detect if this line is a massive transformation step
+            matches = re.findall(repetition_pattern, line)
+
+            if len(matches) > 6:  # If more than 6 column definitions in one line
+                # Keep the start of the line (Step Name = Table.Transform...)
+                prefix = line.split('{')[0]
+                # Keep the first 3 and last 3 column transformations
+                summarized_line = (
+                    f"{prefix}{{ {', '.join(matches[:3])}, "
+                    f"... [ {len(matches) - 6} columns omitted for brevity ] ..., "
+                    f"{', '.join(matches[-3:])} }})"
+                )
+                truncated_lines.append(summarized_line)
+            else:
+                truncated_lines.append(line)
+
+        return "\n".join(truncated_lines)
