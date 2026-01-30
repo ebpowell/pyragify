@@ -747,7 +747,7 @@ class RepoContentProcessor:
         subdir_key = str(subdir)
         content = self.content_buffers.get(subdir_key, "")
         if content:
-            file_path = self.output_dir / subdir / f"chunk_{self.file_counter[subdir]}.txt"
+            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.file_counter[subdir]}.txt"
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
