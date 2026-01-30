@@ -301,6 +301,9 @@ class FileProcessor:
         elif chunk_type == "excel_lineage":
             content = self._ensure_text(chunk.get("content", ""))
             return f"Excel Lineage:\n{content}"
+        elif chunk_type == "sql_statement":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"SQL Statement:\n{content}"
         else:
             # Unknown chunk: turn it into a string representation
             return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
