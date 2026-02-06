@@ -15,9 +15,9 @@ from processor import RepoContentProcessor, FileProcessor
 from excel_processor import ExcelDataProcessor
 
 if __name__ == "__main__":
-    repo_folder = '/mnt/c/Users/UVP/work_to/'
+    repo_folder = '/mnt/c/Users/UVP/'
     #repo_folder = '/home/ebpowell/TradeOutreach/'
-    repo_name = 'ABMC_Demo_work'
+    repo_name = 'ITSD'
     repo_path = Path(repo_folder + repo_name)
     output_dir = Path(repo_folder + '/output_'+ repo_name)
     # processor = RepoContentProcessor(repo_path)
