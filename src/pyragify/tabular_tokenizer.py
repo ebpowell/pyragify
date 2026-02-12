@@ -133,12 +133,13 @@ class TabularDataTokenizer:
 
         return generated_files
 
-    def process_cursor(self, cursor: Any, output_path: Union[str, Path], table_name: str = None) -> Path:
+    def process_cursor(self, cursor: Any, table_name: str = None) -> Path:
         """
         Process data from a database cursor.
         Assumes cursor.description is available for headers.
         """
-        output_path = Path(output_path)
+        filename = table_name + '.txt'
+        output_path = self.output_dir / filename
         
         if not cursor.description:
              logger.warning("Cursor has no description (headers).")
