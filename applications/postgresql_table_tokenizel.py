@@ -56,7 +56,7 @@ def main(output_dir, connect_string, table_name):
         tokenizer.process_cursor(active_cursor, table_name)
 
 if __name__ == "__main__":
-    connect_string= "dbname=itsd_analysis user=postgres password=postgres host=hgis-prj-mgmt port=5438"
+    connect_string= "dbname=itsd_analysis user=ebpowell password=Geo!ogy_26$ host=localhost port=5432"
     table_name = 'raw_data.v_itsd_positions'
     output_dir = '/home/ebpowell/ITSD'
     main(output_dir, connect_string, table_name)
