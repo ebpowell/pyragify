@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # repo_name = 'pyragify'
 
     repo_path = Path(repo_folder + repo_name)
-    output_dir = Path(repo_folder + '/output')
+    output_dir = Path(repo_folder + '/output/'+repo_name)
     hashes_file = output_dir / "hashes.json"
     if hashes_file.exists():
         hashes_file.unlink()

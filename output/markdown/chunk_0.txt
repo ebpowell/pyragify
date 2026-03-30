@@ -1,0 +1,48 @@
+Unknown chunk type:
+{'header': '# pyragify: Unlock the Power of Your Code with NotebookLM', 'content': "\n**pyragify** is a Python-based tool designed to **transform your Python code repositories into a format that's ready for analysis with large language models (LLMs), specifically NotebookLM.** It breaks down complex code structures into manageable semantic chunks, making it easier to understand, analyze, and extract insights from your code.\n\n"}
+
+Unknown chunk type:
+{'header': '## Why pyragify?', 'content': '\n* **Boost Code Comprehension:**  pyragify makes it easier to digest large codebases by dividing them into smaller, logical units.\n* **Effortless Analysis:** The structured output simplifies the process of analyzing code, identifying patterns, and extracting knowledge.\n* **Unlock the Power of NotebookLM:** pyragify prepares your code for use with NotebookLM, allowing you to leverage the power of LLMs for tasks like code summarization, documentation generation, and question answering.\n\n'}
+
+Unknown chunk type:
+{'header': '## Key Features', 'content': '\n* **Semantic Chunking:** pyragify intelligently extracts functions, classes, and comments from Python files, as well as headers and sections from Markdown files, preserving the context and meaning.\n* **Wide Format Support:** It handles Python (.py), Markdown (.md, .markdown), HTML (.html), CSS (.css), and other common file types, ensuring all your repository content is processed.\n* **Smart Parsing:** Uses AST for Python files, regex-based parsing for HTML/CSS, and header-based chunking for Markdown files.\n* **Seamless Integration with NotebookLM:** The output format is specifically designed for compatibility with NotebookLM, making it easy to analyze your code with powerful LLMs.\n* **Flexible Configuration:** Tailor the processing through a YAML file or command-line arguments to fit your specific needs.\n* **File Skipping:** Respect your `.gitignore` and `.dockerignore` files, and define custom skip patterns for even more control.\n* **Word Limit Control:** Automatically chunks output files based on a configurable word limit to ensure manageable file sizes.\n* **Input Validation:** Validates repository paths and provides clear error messages for invalid inputs.\n\n'}
+
+Unknown chunk type:
+{'header': '## Getting Started', 'content': '\n'}
+
+Unknown chunk type:
+{'header': '### Installation', 'content': '\n1. **Using uv (Recommended):**\n\n    ```bash\n    uv pip install pyragify\n    ```\n\n    `uv` is a blazing fast Python package manager that handles virtual environments and dependencies automatically.\n\n2. **Using pip:**\n\n    ```bash\n    pip install pyragify\n    ```\n\n3. **From Source:**\n\n    ```bash\n    git clone https://github.com/ThomasBury/pyragify.git\n    cd pyragify\n    uv pip install -e .\n    ```\n\n'}
+
+Unknown chunk type:
+{'header': '### Usage', 'content': '\n1. **Best Practice with uv:**\n\n    ```bash\n    uv run pyragify --config-file config.yaml\n    ```\n\nSee below for details about the configuration file.\n\n2. **Direct CLI Execution:**\n\n    ```bash\n    python -m pyragify --config-file config.yaml\n    ```\n\n'}
+
+Unknown chunk type:
+{'header': '#### Arguments and Options', 'content': '\nSee `pyragify --help` for a full list of options.\n\n* `--config-file`: Path to the YAML configuration file (default: config.yaml).\n* `--repo-path`: Override the repository path.\n* `--output-dir`: Override the output directory.\n* `--max-words`: Override the maximum words per output file.\n* `--max-file-size`: Override the maximum file size (in bytes) to process.\n* `--skip-patterns`: Override file patterns to skip.\n* `--skip-dirs`: Override directories to skip.\n* `--verbose`: Enable detailed logging for debugging.\n\n'}
+
+Unknown chunk type:
+{'header': '### Configuration (config.yaml)', 'content': '\n```yaml\nrepo_path: /path/to/repository\noutput_dir: /path/to/output\nmax_words: 200000\nmax_file_size: 10485760 # 10 MB\nskip_patterns:\n - "*.log"\n - "*.tmp"\nskip_dirs:\n - "__pycache__"\n - "node_modules"\nverbose: false\n```\n\n'}
+
+Unknown chunk type:
+{'header': '## Example Workflow', 'content': '\n1. **Prepare Your Repository:** Make sure your repository contains the code you want to process. Utilize `.gitignore` or `.dockerignore` to exclude unwanted files or directories.\n2. **Configure pyragify:** Create a `config.yaml` file with your desired settings or use the default configuration.\n3. **Process the Repository:** Run pyragify using uv (recommended):\n\n    ```bash\n    uv run pyragify --config-file config.yaml\n    ```\n\n4. **Check the Output:** Your processed content is neatly organized by file type in the specified output directory.\n\n'}
+
+Unknown chunk type:
+{'header': '## Chat with Your Codebase (with NotebookLM)', 'content': '\n1. Navigate to NotebookLM.\n2. Upload the `chunk_0.txt` file (or other relevant chunks) from the pyragify output directory to a new notebook.\n3. Start asking questions and get insights with precise citations! You can even generate a podcast from your code.\n    ![code_chat](chat_code_base.png "Chat with your code base")\n\n'}
+
+Unknown chunk type:
+{'header': '## Output Structure', 'content': '\nThe processed content is saved as `.txt` files and categorized into subdirectories based on the file type:\n\n* `python/`:  Contains chunks of Python functions, classes, and their code.\n* `markdown/`:  Contains sections of Markdown files split by headers.\n* `html/`:  Contains HTML script and style chunks extracted from HTML files.\n* `css/`:  Contains CSS rule chunks from CSS files.\n* `other/`:  Contains plain-text versions of unsupported file types.\n\n'}
+
+Unknown chunk type:
+{'header': '## Advanced Features', 'content': '\n* **Input Validation:** Validates repository paths and provides clear error messages for invalid inputs.\n* **Respect for Ignore Files:** pyragify automatically honors `.gitignore` and `.dockerignore` patterns.\n* **Incremental Processing:** MD5 hashes are used to efficiently skip unchanged files during subsequent runs.\n\n'}
+
+Unknown chunk type:
+{'header': '## Contributing', 'content': '\nWe welcome contributions! To contribute to pyragify:\n\n1. Clone the repository.\n2. Install dependencies.\n3. Run tests. (Test suite is under development).\n\n'}
+
+Unknown chunk type:
+{'header': '## Support', 'content': '\nFeel free to create a GitHub issue for any questions, bug reports, or feature requests.\n\n'}
+
+Unknown chunk type:
+{'header': '## License', 'content': '\nThis project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.\n\n'}
+
+Unknown chunk type:
+{'header': '## Example Usages', 'content': '\n**Process a Repository with Default Settings:**\n\n```bash\nuv run pyragify --config-file config.yaml\n```\n\n**Process a Specific Repository with Custom Settings:**\n\n```bash\nuv run pyragify \\\n --repo-path /my/repo \\\n --output-dir /my/output \\\n --max-words 100000 \\\n --max-file-size 5242880 \\\n --skip-patterns "*.log,*.tmp" \\\n --skip-dirs "__pycache__,node_modules" \\\n --verbose\n```\n'}
+

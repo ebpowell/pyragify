@@ -1,0 +1,144 @@
+{
+    "processed_files": [
+        {
+            "path": "__init__.py",
+            "chunks": 0,
+            "size": 0,
+            "lines": 0,
+            "words": 0
+        },
+        {
+            "path": "README.md",
+            "chunks": 16,
+            "size": 6133,
+            "lines": 163,
+            "words": 869
+        },
+        {
+            "path": "reproduce_issue.py",
+            "chunks": 0,
+            "size": 0,
+            "lines": 0,
+            "words": 0
+        },
+        {
+            "path": "tests/test_processor.py",
+            "chunks": 19,
+            "size": 7498,
+            "lines": 220,
+            "words": 1252
+        },
+        {
+            "path": "tests/test_powerbi_processor.py",
+            "chunks": 11,
+            "size": 6397,
+            "lines": 180,
+            "words": 1369
+        },
+        {
+            "path": "applications/check_library.py",
+            "chunks": 1,
+            "size": 2776,
+            "lines": 58,
+            "words": 133
+        },
+        {
+            "path": "src/pyragify/cli.py",
+            "chunks": 2,
+            "size": 5843,
+            "lines": 129,
+            "words": 963
+        },
+        {
+            "path": "src/pyragify/powerbi_processor.py",
+            "chunks": 8,
+            "size": 9792,
+            "lines": 249,
+            "words": 1785
+        },
+        {
+            "path": "src/pyragify/utils.py",
+            "chunks": 2,
+            "size": 1833,
+            "lines": 66,
+            "words": 362
+        },
+        {
+            "path": "src/pyragify/__main__.py",
+            "chunks": 0,
+            "size": 67,
+            "lines": 4,
+            "words": 0
+        },
+        {
+            "path": "src/pyragify/sql_processor.py",
+            "chunks": 6,
+            "size": 5413,
+            "lines": 150,
+            "words": 977
+        },
+        {
+            "path": "src/pyragify/excel_processor.py",
+            "chunks": 7,
+            "size": 8185,
+            "lines": 194,
+            "words": 1641
+        },
+        {
+            "path": "src/pyragify/__init__.py",
+            "chunks": 0,
+            "size": 1,
+            "lines": 1,
+            "words": 0
+        },
+        {
+            "path": "src/pyragify/processor.py",
+            "chunks": 23,
+            "size": 33957,
+            "lines": 899,
+            "words": 7694
+        }
+    ],
+    "skipped_files": [
+        {
+            "path": "chat_code_base.png",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": ".gitignore",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "pyproject.toml",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "config.yaml",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "LICENSE",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "uv.lock",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "temp_repo_gitignore_test/should_ignore.ignore",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "temp_repo_gitignore_test/ignored_dir/file.txt",
+            "reason": "Unchanged file (hash match)"
+        },
+        {
+            "path": "src/pyragify/sql_processor",
+            "reason": "Unchanged file (hash match)"
+        }
+    ],
+    "summary": {
+        "total_files_processed": 14,
+        "total_words": 17045
+    }
+}

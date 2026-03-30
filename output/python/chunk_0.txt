@@ -1,0 +1,4329 @@
+Function: sample_python_file
+Docstring:
+Fixture for a sample Python file with function and class.
+Code:
+def sample_python_file(tmp_path):
+    """Fixture for a sample Python file with function and class."""
+    file_path = tmp_path / "sample.py"
+    file_path.write_text("""
+def test_function(param):
+    \"\"\"Docstring for function.\"\"\"
+    return param * 2
+
+class TestClass:
+    \"\"\"Docstring for class.\"\"\"
+    def method(self):
+        return "method"
+# Comment line
+""")
+    return file_path
+
+Function: sample_markdown_file
+Docstring:
+Fixture for a sample Markdown file with headers.
+Code:
+def sample_markdown_file(tmp_path):
+    """Fixture for a sample Markdown file with headers."""
+    file_path = tmp_path / "sample.md"
+    file_path.write_text("""
+# Header 1
+Content under header 1.
+
+## Header 2
+Content under header 2.
+""")
+    return file_path
+
+Function: sample_js_file
+Docstring:
+Fixture for a sample JavaScript file.
+Code:
+def sample_js_file(tmp_path):
+    """Fixture for a sample JavaScript file."""
+    file_path = tmp_path / "sample.js"
+    file_path.write_text("""
+function testFunction(param) {
+    return param * 2;
+}
+
+class TestClass {
+    constructor() {}
+    method() {
+        return 'test';
+    }
+}
+
+const arrow = (x) => x * 3;
+""")
+    return file_path
+
+Function: sample_java_file
+Docstring:
+Fixture for a sample Java file.
+Code:
+def sample_java_file(tmp_path):
+    """Fixture for a sample Java file."""
+    file_path = tmp_path / "Sample.java"
+    file_path.write_text("""
+public class Sample {
+    public static void testMethod(String param) {
+        return param.length();
+    }
+}
+""")
+    return file_path
+
+Function: sample_cpp_file
+Docstring:
+Fixture for a sample C++ file.
+Code:
+def sample_cpp_file(tmp_path):
+    """Fixture for a sample C++ file."""
+    file_path = tmp_path / "sample.cpp"
+    file_path.write_text("""
+struct TestStruct {
+    int x;
+};
+
+int testFunction(int param) {
+    return param * 2;
+}
+""")
+    return file_path
+
+Function: sample_html_file
+Docstring:
+Fixture for a sample HTML file.
+Code:
+def sample_html_file(tmp_path):
+    """Fixture for a sample HTML file."""
+    file_path = tmp_path / "sample.html"
+    file_path.write_text("""
+<!DOCTYPE html>
+<html>
+<script>
+function jsFunc() { return 'hi'; }
+</script>
+<style>
+body { color: red; }
+</style>
+</html>
+""")
+    return file_path
+
+Function: sample_css_file
+Docstring:
+Fixture for a sample CSS file.
+Code:
+def sample_css_file(tmp_path):
+    """Fixture for a sample CSS file."""
+    file_path = tmp_path / "sample.css"
+    file_path.write_text("""
+body {
+    color: red;
+}
+
+@media screen {
+    div { font-size: 12px; }
+}
+""")
+    return file_path
+
+Function: test_compute_file_hash
+Docstring:
+Test file hash computation.
+Code:
+def test_compute_file_hash(sample_python_file):
+    """Test file hash computation."""
+    hash_value = compute_file_hash(sample_python_file)
+    assert isinstance(hash_value, str)
+    assert len(hash_value) == 32
+
+Function: test_save_json_load_json
+Docstring:
+Test saving and loading JSON.
+Code:
+def test_save_json_load_json(tmp_path):
+    """Test saving and loading JSON."""
+    data = {"test": "value"}
+    json_path = tmp_path / "test.json"
+    save_json(data, json_path, "test data")
+    loaded = load_json(json_path, "test data")
+    assert loaded == data
+
+Function: test_is_documentation_file
+Docstring:
+Test documentation file detection.
+Code:
+def test_is_documentation_file():
+    """Test documentation file detection."""
+    assert is_documentation_file(Path("README.md")) == True
+    assert is_documentation_file(Path("example.py")) == False
+
+Function: test_read_file_in_chunks
+Docstring:
+Test reading file in chunks.
+Code:
+def test_read_file_in_chunks(sample_python_file):
+    """Test reading file in chunks."""
+    chunks = list(read_file_in_chunks(sample_python_file))
+    full_content = sample_python_file.read_text()
+    assert ''.join(chunks) == full_content
+
+Class: TestFileProcessor
+Code:
+class TestFileProcessor:
+    def test_chunk_python_file(self, sample_python_file, tmp_path):
+        """Test Python chunking."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        chunks, line_count = processor.chunk_python_file(sample_python_file)
+        assert line_count > 0
+        assert len(chunks) >= 3  # Function, class, and comments
+        func_chunk = next((c for c in chunks if c["type"] == "function"), None)
+        assert func_chunk is not None
+        assert "test_function" in func_chunk["name"]
+        assert "def test_function" in func_chunk["code"]
+        assert func_chunk["docstring"] == "Docstring for function."
+        class_chunk = next((c for c in chunks if c["type"] == "class"), None)
+        assert class_chunk is not None
+        assert "TestClass" in class_chunk["name"]
+        assert "class TestClass" in class_chunk["code"]
+        assert class_chunk["docstring"] == "Docstring for class."
+
+    def test_chunk_markdown_file(self, sample_markdown_file, tmp_path):
+        """Test Markdown chunking."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        chunks, line_count = processor.chunk_markdown_file(sample_markdown_file)
+        assert line_count > 0
+        assert len(chunks) == 2  # Two headers
+        assert chunks[0]["header"] == "# Header 1"
+        assert "Content under header 1" in chunks[0]["content"]
+
+    @pytest.mark.parametrize("file_fixture, suffix, expected_types", [
+        ("sample_js_file", ".js", ["file"]),
+        ("sample_java_file", ".java", ["file"]),
+        ("sample_cpp_file", ".cpp", ["file"]),
+        ("sample_html_file", ".html", ["html_script", "html_style"]),
+        ("sample_css_file", ".css", ["css_rule"]),
+    ])
+    def test_chunk_tree_sitter_file_real(self, request, file_fixture, suffix, expected_types, tmp_path):
+        """Test tree-sitter chunking for multiple languages with real parsers."""
+        file_path = request.getfixturevalue(file_fixture)
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        chunks, line_count = processor.chunk_tree_sitter_file(file_path, suffix)
+        assert line_count > 0
+        assert chunks
+        found_types = {c["type"] for c in chunks}
+        for expected_type in expected_types:
+            assert expected_type in found_types
+
+    def test_chunk_file_routing(self, sample_python_file, sample_markdown_file, sample_js_file, tmp_path):
+        """Test chunk_file routes to correct method."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        py_chunks, _ = processor.chunk_file(sample_python_file)
+        assert any(c["type"] == "function" for c in py_chunks)
+        md_chunks, _ = processor.chunk_file(sample_markdown_file)
+        assert "header" in md_chunks[0]
+        js_chunks, _ = processor.chunk_file(sample_js_file)
+        assert any(c["type"] == "file" for c in js_chunks)
+
+    def test_format_chunk(self):
+        """Test formatting various chunk types."""
+        processor = FileProcessor(Path("."), Path("."))
+        func_chunk = {"type": "function", "name": "test", "code": "def test(): pass", "docstring": "A test function."}
+        formatted = processor.format_chunk(func_chunk)
+        assert "Function: test" in formatted
+        assert "Docstring:\nA test function." in formatted
+        assert "def test(): pass" in formatted
+        html_chunk = {"type": "html_script", "content": "<script>alert('hi');</script>"}
+        formatted_html = processor.format_chunk(html_chunk)
+        assert "HTML Script:" in formatted_html
+
+    def test_chunk_file_unreadable(self, tmp_path, caplog):
+        """Test that chunking an unreadable file is handled gracefully."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        bad_file = tmp_path / "bad.txt"
+        bad_file.write_bytes(b'\x80') # Invalid utf-8
+        chunks, line_count = processor.chunk_file(bad_file)
+        assert chunks == []
+        assert line_count == 0
+        assert "Error reading file" in caplog.text
+
+Function: test_chunk_python_file
+Docstring:
+Test Python chunking.
+Code:
+def test_chunk_python_file(self, sample_python_file, tmp_path):
+        """Test Python chunking."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        chunks, line_count = processor.chunk_python_file(sample_python_file)
+        assert line_count > 0
+        assert len(chunks) >= 3  # Function, class, and comments
+        func_chunk = next((c for c in chunks if c["type"] == "function"), None)
+        assert func_chunk is not None
+        assert "test_function" in func_chunk["name"]
+        assert "def test_function" in func_chunk["code"]
+        assert func_chunk["docstring"] == "Docstring for function."
+        class_chunk = next((c for c in chunks if c["type"] == "class"), None)
+        assert class_chunk is not None
+        assert "TestClass" in class_chunk["name"]
+        assert "class TestClass" in class_chunk["code"]
+        assert class_chunk["docstring"] == "Docstring for class."
+
+Function: test_chunk_markdown_file
+Docstring:
+Test Markdown chunking.
+Code:
+def test_chunk_markdown_file(self, sample_markdown_file, tmp_path):
+        """Test Markdown chunking."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        chunks, line_count = processor.chunk_markdown_file(sample_markdown_file)
+        assert line_count > 0
+        assert len(chunks) == 2  # Two headers
+        assert chunks[0]["header"] == "# Header 1"
+        assert "Content under header 1" in chunks[0]["content"]
+
+Function: test_chunk_tree_sitter_file_real
+Docstring:
+Test tree-sitter chunking for multiple languages with real parsers.
+Code:
+def test_chunk_tree_sitter_file_real(self, request, file_fixture, suffix, expected_types, tmp_path):
+        """Test tree-sitter chunking for multiple languages with real parsers."""
+        file_path = request.getfixturevalue(file_fixture)
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        chunks, line_count = processor.chunk_tree_sitter_file(file_path, suffix)
+        assert line_count > 0
+        assert chunks
+        found_types = {c["type"] for c in chunks}
+        for expected_type in expected_types:
+            assert expected_type in found_types
+
+Function: test_chunk_file_routing
+Docstring:
+Test chunk_file routes to correct method.
+Code:
+def test_chunk_file_routing(self, sample_python_file, sample_markdown_file, sample_js_file, tmp_path):
+        """Test chunk_file routes to correct method."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        py_chunks, _ = processor.chunk_file(sample_python_file)
+        assert any(c["type"] == "function" for c in py_chunks)
+        md_chunks, _ = processor.chunk_file(sample_markdown_file)
+        assert "header" in md_chunks[0]
+        js_chunks, _ = processor.chunk_file(sample_js_file)
+        assert any(c["type"] == "file" for c in js_chunks)
+
+Function: test_format_chunk
+Docstring:
+Test formatting various chunk types.
+Code:
+def test_format_chunk(self):
+        """Test formatting various chunk types."""
+        processor = FileProcessor(Path("."), Path("."))
+        func_chunk = {"type": "function", "name": "test", "code": "def test(): pass", "docstring": "A test function."}
+        formatted = processor.format_chunk(func_chunk)
+        assert "Function: test" in formatted
+        assert "Docstring:\nA test function." in formatted
+        assert "def test(): pass" in formatted
+        html_chunk = {"type": "html_script", "content": "<script>alert('hi');</script>"}
+        formatted_html = processor.format_chunk(html_chunk)
+        assert "HTML Script:" in formatted_html
+
+Function: test_chunk_file_unreadable
+Docstring:
+Test that chunking an unreadable file is handled gracefully.
+Code:
+def test_chunk_file_unreadable(self, tmp_path, caplog):
+        """Test that chunking an unreadable file is handled gracefully."""
+        output_dir = tmp_path / "output"
+        processor = FileProcessor(tmp_path, output_dir)
+        bad_file = tmp_path / "bad.txt"
+        bad_file.write_bytes(b'\x80') # Invalid utf-8
+        chunks, line_count = processor.chunk_file(bad_file)
+        assert chunks == []
+        assert line_count == 0
+        assert "Error reading file" in caplog.text
+
+Comments:
+Line 119: MD5 hex length
+Line 147: Function, class, and comments
+Line 165: Two headers
+Line 216: Invalid utf-8
+
+Function: sample_model_tmdl
+Docstring:
+Fixture for model.tmdl.
+Code:
+def sample_model_tmdl(tmp_path):
+    """Fixture for model.tmdl."""
+    file_path = tmp_path / "model.tmdl"
+    file_path.write_text("""
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+ref table Date
+ref table Sales
+ref table 'Product'
+""")
+    return file_path
+
+Function: sample_tmdl_file
+Docstring:
+Fixture for a sample TMDL file with tables and other keywords.
+Code:
+def sample_tmdl_file(tmp_path):
+    """Fixture for a sample TMDL file with tables and other keywords."""
+    file_path = tmp_path / "tables.tmdl"
+    file_path.write_text("""
+table Date
+    lineageTag: 2d1234...
+
+    column Date
+        dataType: dateTime
+        formatString: Short Date
+
+table Sales
+    lineageTag: 3e5678...
+
+    measure 'Total Sales' = SUM(Sales[Amount])
+        formatString: $#,##0
+
+    partition Partition1
+        mode: import
+        source = M
+
+    annotation PBI_ResultType = Table
+""")
+    return file_path
+
+Function: sample_python_file
+Docstring:
+Fixture for a sample Python file to test delegation.
+Code:
+def sample_python_file(tmp_path):
+    """Fixture for a sample Python file to test delegation."""
+    file_path = tmp_path / "script.py"
+    file_path.write_text("print('hello')")
+    return file_path
+
+Class: TestPbiProcessor
+Code:
+class TestPbiProcessor:
+
+    def test_chunk_tmdl_file(self, sample_tmdl_file, tmp_path):
+        """Test TMDL chunking logic."""
+        output_dir = tmp_path / "output"
+        processor = pbi_processor(tmp_path, output_dir)
+        
+        chunks, line_count = processor.chunk_tmdl_file(sample_tmdl_file)
+        
+        assert line_count > 0
+        # Expected chunks:
+        # 1. table Date
+        # 2. column Date
+        # 3. table Sales
+        # 4. measure 'Total Sales'
+        # 5. partition Partition1
+        # 6. annotation PBI_ResultType
+        assert len(chunks) == 6
+        
+        types = [c["type"] for c in chunks]
+        assert "table" in types
+        assert "column" in types
+        assert "measure" in types
+        assert "partition" in types
+        assert "annotation" in types
+        
+        # Verify specific content containment
+        col_chunk = next(c for c in chunks if c["type"] == "column")
+        assert col_chunk["name"] == "Date"
+        assert "dataType: dateTime" in col_chunk["content"]
+        
+        measure_chunk = next(c for c in chunks if c["type"] == "measure")
+        assert measure_chunk["name"] == "'Total Sales'"
+        assert "formatString" in measure_chunk["content"]
+
+        partition_chunk = next(c for c in chunks if c["type"] == "partition")
+        assert partition_chunk["name"] == "Partition1"
+        assert "mode: import" in partition_chunk["content"]
+        
+        # Verify parent association
+        assert col_chunk["parent"] == "Date"
+        assert measure_chunk["parent"] == "Sales"
+        assert partition_chunk["parent"] == "Sales"
+        
+        # Annotation defined inside Sales table
+        annotation_chunk = next(c for c in chunks if c["type"] == "annotation")
+        assert annotation_chunk["parent"] == "Sales"
+
+    def test_format_chunk_parent(self, tmp_path):
+        """Test formatting with parent table."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "column",
+            "name": "Date",
+            "content": "dataType: dateTime",
+            "parent": "DateTable"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Column: Date" in formatted
+        assert "Table: DateTable" in formatted
+        assert formatted.startswith("Table: DateTable")
+
+    def test_chunk_file_delegation(self, sample_tmdl_file, sample_python_file, tmp_path):
+        """Test that chunk_file delegates correctly."""
+        output_dir = tmp_path / "output"
+        processor = pbi_processor(tmp_path, output_dir)
+        
+        # Test .tmdl
+        tmdl_chunks, _ = processor.chunk_file(sample_tmdl_file)
+        assert tmdl_chunks[0]["type"] == "table"
+        
+        # Test .py delegation to super()
+        # chunk_python_file from FileProcessor produces 'file' chunk for simple script or 'function'/'class'
+        # with just print('hello'), likely falls back or produces empty 'function' list? 
+        # Actually FileProcessor.chunk_python_file uses AST. print('hello') is body logic.
+        # It might produce no function chunks, but `chunk_python_file` returns chunks list.
+        # Let's just check it doesn't crash and returns list (empty or not).
+        # Actually in FileProcessor fallback for .py is chunk_python_file.
+        # If no func/class, it returns empty list? 
+        # Re-reading FileProcessor: yes, if no func/class/comments, returns empty list.
+        # Let's make sample_python_file have a function to be sure.
+        sample_python_file.write_text("def foo(): pass")
+        py_chunks, _ = processor.chunk_file(sample_python_file)
+        assert len(py_chunks) > 0
+        assert py_chunks[0]["type"] == "function"
+
+    def test_format_chunk_table(self, tmp_path):
+        """Test formatting of table chunks."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "table",
+            "name": "MyTable",
+            "content": "table MyTable\n  column ID"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Table: MyTable" in formatted
+        assert "column ID" in formatted
+
+    def test_format_chunk_delegation(self, tmp_path):
+        """Test formatting delegation for standard chunks."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "function",
+            "name": "my_func",
+            "code": "def my_func(): pass"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Function: my_func" in formatted
+
+    def test_chunk_model_tmdl(self, sample_model_tmdl, tmp_path):
+        """Test model.tmdl chunking into index."""
+        output_dir = tmp_path / "output"
+        processor = pbi_processor(tmp_path, output_dir)
+        
+        chunks, line_count = processor.chunk_file(sample_model_tmdl)
+        assert line_count > 0
+        assert len(chunks) == 1
+        
+        index_chunk = chunks[0]
+        assert index_chunk["type"] == "model_index"
+        content = index_chunk["content"]
+        assert "- Date" in content
+        assert "- Sales" in content
+        assert "- 'Product'" in content
+
+Function: test_chunk_tmdl_file
+Docstring:
+Test TMDL chunking logic.
+Code:
+def test_chunk_tmdl_file(self, sample_tmdl_file, tmp_path):
+        """Test TMDL chunking logic."""
+        output_dir = tmp_path / "output"
+        processor = pbi_processor(tmp_path, output_dir)
+        
+        chunks, line_count = processor.chunk_tmdl_file(sample_tmdl_file)
+        
+        assert line_count > 0
+        # Expected chunks:
+        # 1. table Date
+        # 2. column Date
+        # 3. table Sales
+        # 4. measure 'Total Sales'
+        # 5. partition Partition1
+        # 6. annotation PBI_ResultType
+        assert len(chunks) == 6
+        
+        types = [c["type"] for c in chunks]
+        assert "table" in types
+        assert "column" in types
+        assert "measure" in types
+        assert "partition" in types
+        assert "annotation" in types
+        
+        # Verify specific content containment
+        col_chunk = next(c for c in chunks if c["type"] == "column")
+        assert col_chunk["name"] == "Date"
+        assert "dataType: dateTime" in col_chunk["content"]
+        
+        measure_chunk = next(c for c in chunks if c["type"] == "measure")
+        assert measure_chunk["name"] == "'Total Sales'"
+        assert "formatString" in measure_chunk["content"]
+
+        partition_chunk = next(c for c in chunks if c["type"] == "partition")
+        assert partition_chunk["name"] == "Partition1"
+        assert "mode: import" in partition_chunk["content"]
+        
+        # Verify parent association
+        assert col_chunk["parent"] == "Date"
+        assert measure_chunk["parent"] == "Sales"
+        assert partition_chunk["parent"] == "Sales"
+        
+        # Annotation defined inside Sales table
+        annotation_chunk = next(c for c in chunks if c["type"] == "annotation")
+        assert annotation_chunk["parent"] == "Sales"
+
+Function: test_format_chunk_parent
+Docstring:
+Test formatting with parent table.
+Code:
+def test_format_chunk_parent(self, tmp_path):
+        """Test formatting with parent table."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "column",
+            "name": "Date",
+            "content": "dataType: dateTime",
+            "parent": "DateTable"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Column: Date" in formatted
+        assert "Table: DateTable" in formatted
+        assert formatted.startswith("Table: DateTable")
+
+Function: test_chunk_file_delegation
+Docstring:
+Test that chunk_file delegates correctly.
+Code:
+def test_chunk_file_delegation(self, sample_tmdl_file, sample_python_file, tmp_path):
+        """Test that chunk_file delegates correctly."""
+        output_dir = tmp_path / "output"
+        processor = pbi_processor(tmp_path, output_dir)
+        
+        # Test .tmdl
+        tmdl_chunks, _ = processor.chunk_file(sample_tmdl_file)
+        assert tmdl_chunks[0]["type"] == "table"
+        
+        # Test .py delegation to super()
+        # chunk_python_file from FileProcessor produces 'file' chunk for simple script or 'function'/'class'
+        # with just print('hello'), likely falls back or produces empty 'function' list? 
+        # Actually FileProcessor.chunk_python_file uses AST. print('hello') is body logic.
+        # It might produce no function chunks, but `chunk_python_file` returns chunks list.
+        # Let's just check it doesn't crash and returns list (empty or not).
+        # Actually in FileProcessor fallback for .py is chunk_python_file.
+        # If no func/class, it returns empty list? 
+        # Re-reading FileProcessor: yes, if no func/class/comments, returns empty list.
+        # Let's make sample_python_file have a function to be sure.
+        sample_python_file.write_text("def foo(): pass")
+        py_chunks, _ = processor.chunk_file(sample_python_file)
+        assert len(py_chunks) > 0
+        assert py_chunks[0]["type"] == "function"
+
+Function: test_format_chunk_table
+Docstring:
+Test formatting of table chunks.
+Code:
+def test_format_chunk_table(self, tmp_path):
+        """Test formatting of table chunks."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "table",
+            "name": "MyTable",
+            "content": "table MyTable\n  column ID"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Table: MyTable" in formatted
+        assert "column ID" in formatted
+
+Function: test_format_chunk_delegation
+Docstring:
+Test formatting delegation for standard chunks.
+Code:
+def test_format_chunk_delegation(self, tmp_path):
+        """Test formatting delegation for standard chunks."""
+        processor = pbi_processor(tmp_path, tmp_path)
+        chunk = {
+            "type": "function",
+            "name": "my_func",
+            "code": "def my_func(): pass"
+        }
+        formatted = processor.format_chunk(chunk)
+        assert "Function: my_func" in formatted
+
+Function: test_chunk_model_tmdl
+Docstring:
+Test model.tmdl chunking into index.
+Code:
+def test_chunk_model_tmdl(self, sample_model_tmdl, tmp_path):
+        """Test model.tmdl chunking into index."""
+        output_dir = tmp_path / "output"
+        processor = pbi_processor(tmp_path, output_dir)
+        
+        chunks, line_count = processor.chunk_file(sample_model_tmdl)
+        assert line_count > 0
+        assert len(chunks) == 1
+        
+        index_chunk = chunks[0]
+        assert index_chunk["type"] == "model_index"
+        content = index_chunk["content"]
+        assert "- Date" in content
+        assert "- Sales" in content
+        assert "- 'Product'" in content
+
+Comments:
+Line 67: Expected chunks:
+Line 68: 1. table Date
+Line 69: 2. column Date
+Line 70: 3. table Sales
+Line 71: 4. measure 'Total Sales'
+Line 72: 5. partition Partition1
+Line 73: 6. annotation PBI_ResultType
+Line 83: Verify specific content containment
+Line 96: Verify parent association
+Line 101: Annotation defined inside Sales table
+Line 124: Test .tmdl
+Line 128: Test .py delegation to super()
+Line 129: chunk_python_file from FileProcessor produces 'file' chunk for simple script or 'function'/'class'
+Line 130: with just print('hello'), likely falls back or produces empty 'function' list?
+Line 131: Actually FileProcessor.chunk_python_file uses AST. print('hello') is body logic.
+Line 132: It might produce no function chunks, but `chunk_python_file` returns chunks list.
+Line 133: Let's just check it doesn't crash and returns list (empty or not).
+Line 134: Actually in FileProcessor fallback for .py is chunk_python_file.
+Line 135: If no func/class, it returns empty list?
+Line 136: Re-reading FileProcessor: yes, if no func/class/comments, returns empty list.
+Line 137: Let's make sample_python_file have a function to be sure.
+
+Comments:
+Line 4: 1. Get the path to the 'applications' folder (where this script is)
+Line 7: 2. Go up one level to the Project Root, then into 'src'
+Line 8: Structure: applications/ -> (up) -> Root -> (down) -> src
+Line 11: 3. Add this path to sys.path so Python looks there for modules
+Line 30: Use pbi_processor to handle PowerBI files
+Line 31: Need to locally overload skip_patterns with *.py, *.md, etc to use the appropriate function from FileProcessor
+Line 32: Also ignore .sql files here so they can be handled by SqlProcessor
+Line 39: Handle SQL files with SqlProcessor
+Line 52: If a mixed repo (has PowerBI AND Python AND SQL etc.) locally overload skip_patterns with *.tmdl and *.sql
+Line 53: to keep from re-running the PowerBI and SQL files).
+
+Function: process_repo
+Docstring:
+Process a repository and output its content to text files with a specified word limit.
+
+This command processes a repository using a configuration file and optional command-line overrides. 
+It outputs text files based on the repository's contents and saves metadata about the processing.
+
+Parameters
+----------
+config_file : pathlib.Path, optional
+    The path to the configuration YAML file. Default is "config.yaml".
+repo_path : pathlib.Path, optional
+    Override for the path to the repository to process. Defaults to the value in the configuration file.
+output_dir : pathlib.Path, optional
+    Override for the directory where output files will be saved. Defaults to the value in the configuration file.
+max_words : int, optional
+    Override for the maximum number of words allowed per output file. Defaults to the value in the configuration file.
+max_file_size : int, optional
+    Override for the maximum file size (in bytes) to process. Defaults to the value in the configuration file.
+skip_patterns : list of str, optional
+    Override for the list of file patterns to skip (e.g., "*.log", "*.tmp"). Defaults to the value in the configuration file.
+skip_dirs : list of str, optional
+    Override for the list of directory names to skip (e.g., "node_modules", "__pycache__"). Defaults to the value in the configuration file.
+verbose : bool, optional
+    Override for enabling verbose output. When enabled, the logging level is set to DEBUG. Defaults to the value in the configuration file.
+
+Notes
+-----
+- If a configuration file exists, its settings are loaded first.
+- Command-line options take precedence and override corresponding configuration file values.
+- The repository is processed based on the final resolved configuration, and results are saved to the specified output directory.
+- Errors during processing are logged, and the command exits with an error code.
+
+Examples
+--------
+Run the command with the default configuration file:
+    $ python -m yourmodule.cli process-repo
+
+Override the repository path and enable verbose output:
+    $ python -m yourmodule.cli process-repo --repo-path /path/to/repo --verbose
+
+Specify a custom configuration file:
+    $ python -m yourmodule.cli process-repo --config-file custom_config.yaml
+Code:
+def process_repo(
+    config_file: Path = typer.Option("config.yaml", help="Path to the configuration YAML file."),
+    repo_path: Path = typer.Option(None, help="Override: Path to the repository to process."),
+    output_dir: Path = typer.Option(None, help="Override: Directory to save output files."),
+    max_words: int = typer.Option(None, help="Override: Maximum number of words per output file."),
+    max_file_size: int = typer.Option(None, help="Override: Maximum file size to process (in bytes)."),
+    skip_patterns: list[str] = typer.Option(None, help="Override: List of file patterns to skip."),
+    skip_dirs: list[str] = typer.Option(None, help="Override: List of directories to skip."),
+    verbose: bool = typer.Option(None, help="Override: Enable verbose output.")
+):
+    """
+    Process a repository and output its content to text files with a specified word limit.
+
+    This command processes a repository using a configuration file and optional command-line overrides. 
+    It outputs text files based on the repository's contents and saves metadata about the processing.
+
+    Parameters
+    ----------
+    config_file : pathlib.Path, optional
+        The path to the configuration YAML file. Default is "config.yaml".
+    repo_path : pathlib.Path, optional
+        Override for the path to the repository to process. Defaults to the value in the configuration file.
+    output_dir : pathlib.Path, optional
+        Override for the directory where output files will be saved. Defaults to the value in the configuration file.
+    max_words : int, optional
+        Override for the maximum number of words allowed per output file. Defaults to the value in the configuration file.
+    max_file_size : int, optional
+        Override for the maximum file size (in bytes) to process. Defaults to the value in the configuration file.
+    skip_patterns : list of str, optional
+        Override for the list of file patterns to skip (e.g., "*.log", "*.tmp"). Defaults to the value in the configuration file.
+    skip_dirs : list of str, optional
+        Override for the list of directory names to skip (e.g., "node_modules", "__pycache__"). Defaults to the value in the configuration file.
+    verbose : bool, optional
+        Override for enabling verbose output. When enabled, the logging level is set to DEBUG. Defaults to the value in the configuration file.
+
+    Notes
+    -----
+    - If a configuration file exists, its settings are loaded first.
+    - Command-line options take precedence and override corresponding configuration file values.
+    - The repository is processed based on the final resolved configuration, and results are saved to the specified output directory.
+    - Errors during processing are logged, and the command exits with an error code.
+
+    Examples
+    --------
+    Run the command with the default configuration file:
+        $ python -m yourmodule.cli process-repo
+
+    Override the repository path and enable verbose output:
+        $ python -m yourmodule.cli process-repo --repo-path /path/to/repo --verbose
+
+    Specify a custom configuration file:
+        $ python -m yourmodule.cli process-repo --config-file custom_config.yaml
+    """
+
+    # Load configuration from YAML
+    if config_file.exists():
+        config = OmegaConf.load(config_file)
+        logger.info(f"Loaded configuration from '{config_file}'")
+    else:
+        config = OmegaConf.create()
+        if repo_path is None: # No --repo-path override
+            logger.error(f"Configuration file '{config_file}' not found and --repo-path not provided.")
+            raise typer.Exit(code=1)
+
+    # Apply CLI overrides
+    overrides = {
+        "repo_path": repo_path,
+        "output_dir": output_dir,
+        "max_words": max_words,
+        "max_file_size": max_file_size,
+        "skip_patterns": skip_patterns,
+        "skip_dirs": skip_dirs,
+        "verbose": verbose,
+    }
+    for key, value in overrides.items():
+        if value is not None:
+            config[key] = value
+
+    if config.verbose:
+        logger.setLevel(logging.DEBUG)
+        logger.debug("Verbose mode enabled. Setting logging level to DEBUG.")
+
+    # Validate repo_path after config is loaded and merged
+    if "repo_path" not in config or not config.repo_path:
+        typer.echo("Error: repo_path must be defined in the config file or via --repo-path.", err=True)
+        raise typer.Exit(code=1)
+
+    repo_path_obj = Path(config.repo_path)
+    if not repo_path_obj.exists():
+        typer.echo(f"Error: Repository path '{config.repo_path}' does not exist.", err=True)
+        raise typer.Exit(code=1)
+    if not repo_path_obj.is_dir():
+        typer.echo(f"Error: Repository path '{config.repo_path}' is not a directory.", err=True)
+        raise typer.Exit(code=1)
+    # Initialize and run the processor
+    try:
+        processor = RepoContentProcessor(
+            repo_path=repo_path_obj,
+            output_dir=Path(config.output_dir),
+            max_words=config.max_words,
+            max_file_size=config.max_file_size,
+            skip_patterns=config.skip_patterns,
+            skip_dirs=config.skip_dirs
+        )
+        processor.process_repo()
+        logger.info("Repository processing completed successfully!")
+    except Exception as e:
+        logger.error(f"An error occurred during repository processing: {e}")
+        raise typer.Exit(code=1)
+
+Comments:
+Line 7: Configure logging
+Line 72: Load configuration from YAML
+Line 78: No --repo-path override
+Line 82: Apply CLI overrides
+Line 100: Validate repo_path after config is loaded and merged
+Line 112: Initialize and run the processor
+
+Class: PBIProcessor
+Docstring:
+Processor for PowerBI files, specifically TMDL files.
+Code:
+class PBIProcessor(FileProcessor):
+    """
+    Processor for PowerBI files, specifically TMDL files.
+    """
+
+    def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a file into semantic sections based on its type.
+        
+        Overrides FileProcessor.chunk_file to handle .tmdl files.
+        """
+        if file_path.suffix == ".tmdl":
+            return self.chunk_tmdl_file(file_path)
+        return super().chunk_file(file_path)
+
+    def chunk_tmdl_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a TMDL file into semantic sections (tables, columns, measures, etc.).
+        """
+        if file_path.name == "model.tmdl":
+            return self.chunk_model_tmdl(file_path)
+        elif file_path.name == "relationships.tmdl":
+            return self.vectorize_relationships(file_path)
+
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                lines = f.readlines()
+            line_count = len(lines)
+
+            # Keywords to track
+            keywords = ["table", "column", "partition", "expression", "measure", "annotation"]
+            
+            # Helper to calculate indentation
+            def get_indent(line):
+                return len(line) - len(line.lstrip())
+
+            # Identify all blocks starting with a keyword
+            # Structure: (start_index, indent_level, type, name, header_line, parent)
+            blocks = []
+            current_table_name = None
+
+            for i, line in enumerate(lines):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                
+                parts = stripped.split(maxsplit=1)
+                if not parts:
+                    continue
+                
+                kw = parts[0]
+                if kw in keywords:
+                    name = ""
+                    if kw == "annotation":
+                        name = parts[1] if len(parts) > 1 else "Unnamed"
+                    elif len(parts) > 1:
+                        rest = parts[1]
+                        if "=" in rest:
+                             name = rest.split("=", 1)[0].strip()
+                        else:
+                             name = rest.strip()
+                    
+                    # Update current table context if we hit a table
+                    if kw == "table":
+                        current_table_name = name
+
+                    blocks.append({
+                        "start_index": i,
+                        "indent": get_indent(line),
+                        "type": kw,
+                        "name": name,
+                        "header": stripped,
+                        "parent": current_table_name if kw != "table" else None
+                    })
+
+            # For each identified block, capture its content
+            for block in blocks:
+                start_i = block["start_index"]
+                base_indent = block["indent"]
+                
+                content_lines = [lines[start_i]]
+                
+                # Scan subsequent lines
+                for j in range(start_i + 1, len(lines)):
+                    next_line = lines[j]
+                    if not next_line.strip():
+                        content_lines.append(next_line)
+                        continue
+                    
+                    next_indent = get_indent(next_line)
+                    if next_indent > base_indent:
+                        content_lines.append(next_line)
+                    else:
+                        break
+                
+                while content_lines and not content_lines[-1].strip():
+                    content_lines.pop()
+                    
+                chunks.append({
+                    "type": block["type"],
+                    "name": block["name"],
+                    "content": "".join(content_lines),
+                    "parent": block.get("parent")
+                })
+
+            if not chunks:
+                 # Fallback: treat as file
+                 return [{
+                    "type": "file",
+                    "name": file_path.name,
+                    "content": "".join(lines)
+                }], line_count
+
+        except Exception as e:
+            logger.warning(f"Error chunking TMDL file {file_path}: {e}")
+            return [], 0
+            
+        return chunks, line_count
+
+    def chunk_model_tmdl(self, file_path: Path) -> tuple[list, int]:
+        """
+        Parse model.tmdl to extract table references and return an index chunk.
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                content = f.read()
+            line_count = content.count('\n') + 1
+            
+            tables = []
+            for line in content.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("ref table"):
+                    # ref table <TableName>
+                    parts = stripped.split(maxsplit=2)
+                    if len(parts) >= 3:
+                        tables.append(parts[2])
+            
+            chunk = {
+                "type": "model_index",
+                "name": "Model Index",
+                "content": "Tables found in model:\n" + "\n".join(f"- {t}" for t in tables)
+            }
+            return [chunk], line_count
+        except Exception as e:
+            logger.warning(f"Error processing model.tmdl {file_path}: {e}")
+            return [], 0
+
+    def vectorize_relationships(self, file_path: Path) -> tuple[list, int]:
+        """
+        Transforms raw relationship logs into semantic vectors
+        by flattening the structure into human-readable sentences.
+        """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing TMDL Relationships File
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError()
+        # Read the file
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                raw_data = f.read()
+            # Initialize the embedding model
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            # 1. Parsing and Cleaning logic
+            # We use regex to find the blocks of relationships
+            rel_blocks = re.split(r'relationship\s+', raw_data)[1:]
+
+            processed_strings = []
+            metadata = []
+
+            for block in rel_blocks:
+                lines = block.strip().split('\n')
+                rel_id = lines[0].strip()
+
+                # Extract fields using simple dictionary comprehension
+                details = {}
+                for line in lines[1:]:
+                    if ':' in line:
+                        k, v = line.split(':', 1)
+                        details[k.strip()] = v.strip()
+
+                from_col = details.get('fromColumn', 'Unknown')
+                to_col = details.get('toColumn', 'Unknown')
+
+                # 2. Semantic Normalization
+                # Simplify "LocalDateTable_uuid" to just "Date Table"
+                # to help the LLM recognize the pattern.
+                to_col_clean = re.sub(r'LocalDateTable_[a-z0-9-]+', 'DateTable', to_col)
+
+                # 3. Construct a descriptive sentence (The "Vector Target")
+                semantic_description = (
+                    f"Relationship {rel_id}: Table column '{from_col}' "
+                    f"links to '{to_col_clean}'."
+                )
+
+                if 'crossFilteringBehavior' in details:
+                    semantic_description += f" Filters in {details['crossFilteringBehavior']} direction."
+
+                processed_strings.append(semantic_description)
+
+                # Keep original data for the "Context" field in your Vector DB
+                metadata.append({
+                    "id": rel_id,
+                    "original_from": from_col,
+                    "original_to": to_col,
+                    "raw_text": block
+                })
+
+            # 4. Generate the actual vectors
+            embeddings = model.encode(processed_strings)
+
+            return embeddings, processed_strings, metadata
+        except Exception as e:
+            logger.warning(f"Error processing relationships.tmdl {file_path}: {e}")
+
+    def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+        """
+        if chunk.get("type") == "table":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Table: {chunk.get('name')}\nContent:\n{content}"
+        elif chunk.get("type") == "model_index":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Model Index:\n{content}"
+        elif chunk.get("type") == "model_relationships":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Model Relationships:\n{content}"
+        elif chunk.get("type") in ["column", "partition", "expression", "measure", 
+        "annotation", "joinOnDateBehavior", "fromColumn", "toColumn",
+        "joinOnDateBehavior", "database", "Source"]:
+             type_label = chunk.get("type").capitalize()
+             content = self._ensure_text(chunk.get("content", ""))
+             parent = chunk.get("parent")
+             prefix = f"Table: {parent}\n" if parent else ""
+             return f"{prefix}{type_label}: {chunk.get('name')}\nContent:\n{content}"
+        
+        return super().format_chunk(chunk)
+
+Function: chunk_file
+Docstring:
+Chunk a file into semantic sections based on its type.
+
+Overrides FileProcessor.chunk_file to handle .tmdl files.
+Code:
+def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a file into semantic sections based on its type.
+        
+        Overrides FileProcessor.chunk_file to handle .tmdl files.
+        """
+        if file_path.suffix == ".tmdl":
+            return self.chunk_tmdl_file(file_path)
+        return super().chunk_file(file_path)
+
+Function: chunk_tmdl_file
+Docstring:
+Chunk a TMDL file into semantic sections (tables, columns, measures, etc.).
+Code:
+def chunk_tmdl_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a TMDL file into semantic sections (tables, columns, measures, etc.).
+        """
+        if file_path.name == "model.tmdl":
+            return self.chunk_model_tmdl(file_path)
+        elif file_path.name == "relationships.tmdl":
+            return self.vectorize_relationships(file_path)
+
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                lines = f.readlines()
+            line_count = len(lines)
+
+            # Keywords to track
+            keywords = ["table", "column", "partition", "expression", "measure", "annotation"]
+            
+            # Helper to calculate indentation
+            def get_indent(line):
+                return len(line) - len(line.lstrip())
+
+            # Identify all blocks starting with a keyword
+            # Structure: (start_index, indent_level, type, name, header_line, parent)
+            blocks = []
+            current_table_name = None
+
+            for i, line in enumerate(lines):
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                
+                parts = stripped.split(maxsplit=1)
+                if not parts:
+                    continue
+                
+                kw = parts[0]
+                if kw in keywords:
+                    name = ""
+                    if kw == "annotation":
+                        name = parts[1] if len(parts) > 1 else "Unnamed"
+                    elif len(parts) > 1:
+                        rest = parts[1]
+                        if "=" in rest:
+                             name = rest.split("=", 1)[0].strip()
+                        else:
+                             name = rest.strip()
+                    
+                    # Update current table context if we hit a table
+                    if kw == "table":
+                        current_table_name = name
+
+                    blocks.append({
+                        "start_index": i,
+                        "indent": get_indent(line),
+                        "type": kw,
+                        "name": name,
+                        "header": stripped,
+                        "parent": current_table_name if kw != "table" else None
+                    })
+
+            # For each identified block, capture its content
+            for block in blocks:
+                start_i = block["start_index"]
+                base_indent = block["indent"]
+                
+                content_lines = [lines[start_i]]
+                
+                # Scan subsequent lines
+                for j in range(start_i + 1, len(lines)):
+                    next_line = lines[j]
+                    if not next_line.strip():
+                        content_lines.append(next_line)
+                        continue
+                    
+                    next_indent = get_indent(next_line)
+                    if next_indent > base_indent:
+                        content_lines.append(next_line)
+                    else:
+                        break
+                
+                while content_lines and not content_lines[-1].strip():
+                    content_lines.pop()
+                    
+                chunks.append({
+                    "type": block["type"],
+                    "name": block["name"],
+                    "content": "".join(content_lines),
+                    "parent": block.get("parent")
+                })
+
+            if not chunks:
+                 # Fallback: treat as file
+                 return [{
+                    "type": "file",
+                    "name": file_path.name,
+                    "content": "".join(lines)
+                }], line_count
+
+        except Exception as e:
+            logger.warning(f"Error chunking TMDL file {file_path}: {e}")
+            return [], 0
+            
+        return chunks, line_count
+
+Function: chunk_model_tmdl
+Docstring:
+Parse model.tmdl to extract table references and return an index chunk.
+Code:
+def chunk_model_tmdl(self, file_path: Path) -> tuple[list, int]:
+        """
+        Parse model.tmdl to extract table references and return an index chunk.
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                content = f.read()
+            line_count = content.count('\n') + 1
+            
+            tables = []
+            for line in content.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("ref table"):
+                    # ref table <TableName>
+                    parts = stripped.split(maxsplit=2)
+                    if len(parts) >= 3:
+                        tables.append(parts[2])
+            
+            chunk = {
+                "type": "model_index",
+                "name": "Model Index",
+                "content": "Tables found in model:\n" + "\n".join(f"- {t}" for t in tables)
+            }
+            return [chunk], line_count
+        except Exception as e:
+            logger.warning(f"Error processing model.tmdl {file_path}: {e}")
+            return [], 0
+
+Function: vectorize_relationships
+Docstring:
+Transforms raw relationship logs into semantic vectors
+by flattening the structure into human-readable sentences.
+Code:
+def vectorize_relationships(self, file_path: Path) -> tuple[list, int]:
+        """
+        Transforms raw relationship logs into semantic vectors
+        by flattening the structure into human-readable sentences.
+        """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing TMDL Relationships File
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            raise ImportError()
+        # Read the file
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                raw_data = f.read()
+            # Initialize the embedding model
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            # 1. Parsing and Cleaning logic
+            # We use regex to find the blocks of relationships
+            rel_blocks = re.split(r'relationship\s+', raw_data)[1:]
+
+            processed_strings = []
+            metadata = []
+
+            for block in rel_blocks:
+                lines = block.strip().split('\n')
+                rel_id = lines[0].strip()
+
+                # Extract fields using simple dictionary comprehension
+                details = {}
+                for line in lines[1:]:
+                    if ':' in line:
+                        k, v = line.split(':', 1)
+                        details[k.strip()] = v.strip()
+
+                from_col = details.get('fromColumn', 'Unknown')
+                to_col = details.get('toColumn', 'Unknown')
+
+                # 2. Semantic Normalization
+                # Simplify "LocalDateTable_uuid" to just "Date Table"
+                # to help the LLM recognize the pattern.
+                to_col_clean = re.sub(r'LocalDateTable_[a-z0-9-]+', 'DateTable', to_col)
+
+                # 3. Construct a descriptive sentence (The "Vector Target")
+                semantic_description = (
+                    f"Relationship {rel_id}: Table column '{from_col}' "
+                    f"links to '{to_col_clean}'."
+                )
+
+                if 'crossFilteringBehavior' in details:
+                    semantic_description += f" Filters in {details['crossFilteringBehavior']} direction."
+
+                processed_strings.append(semantic_description)
+
+                # Keep original data for the "Context" field in your Vector DB
+                metadata.append({
+                    "id": rel_id,
+                    "original_from": from_col,
+                    "original_to": to_col,
+                    "raw_text": block
+                })
+
+            # 4. Generate the actual vectors
+            embeddings = model.encode(processed_strings)
+
+            return embeddings, processed_strings, metadata
+        except Exception as e:
+            logger.warning(f"Error processing relationships.tmdl {file_path}: {e}")
+
+Function: format_chunk
+Docstring:
+Format a chunk into plain text for saving.
+Code:
+def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+        """
+        if chunk.get("type") == "table":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Table: {chunk.get('name')}\nContent:\n{content}"
+        elif chunk.get("type") == "model_index":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Model Index:\n{content}"
+        elif chunk.get("type") == "model_relationships":
+             content = self._ensure_text(chunk.get("content", ""))
+             return f"Model Relationships:\n{content}"
+        elif chunk.get("type") in ["column", "partition", "expression", "measure", 
+        "annotation", "joinOnDateBehavior", "fromColumn", "toColumn",
+        "joinOnDateBehavior", "database", "Source"]:
+             type_label = chunk.get("type").capitalize()
+             content = self._ensure_text(chunk.get("content", ""))
+             parent = chunk.get("parent")
+             prefix = f"Table: {parent}\n" if parent else ""
+             return f"{prefix}{type_label}: {chunk.get('name')}\nContent:\n{content}"
+        
+        return super().format_chunk(chunk)
+
+Function: get_indent
+Code:
+def get_indent(line):
+                return len(line) - len(line.lstrip())
+
+Comments:
+Line 37: Keywords to track
+Line 40: Helper to calculate indentation
+Line 44: Identify all blocks starting with a keyword
+Line 45: Structure: (start_index, indent_level, type, name, header_line, parent)
+Line 70: Update current table context if we hit a table
+Line 83: For each identified block, capture its content
+Line 90: Scan subsequent lines
+Line 114: Fallback: treat as file
+Line 140: ref table <TableName>
+Line 160: ---------------------------------------------------------
+Line 161: LAZY IMPORTS: Only load heavy libraries if processing TMDL Relationships File
+Line 162: ---------------------------------------------------------
+Line 168: Read the file
+Line 172: Initialize the embedding model
+Line 175: 1. Parsing and Cleaning logic
+Line 176: We use regex to find the blocks of relationships
+Line 186: Extract fields using simple dictionary comprehension
+Line 196: 2. Semantic Normalization
+Line 197: Simplify "LocalDateTable_uuid" to just "Date Table"
+Line 198: to help the LLM recognize the pattern.
+Line 201: 3. Construct a descriptive sentence (The "Vector Target")
+Line 212: Keep original data for the "Context" field in your Vector DB
+Line 220: 4. Generate the actual vectors
+
+Function: load_yaml_config
+Docstring:
+Load a YAML configuration file.
+
+Parameters
+----------
+config_path : pathlib.Path
+    The path to the YAML configuration file to load.
+
+Returns
+-------
+dict
+    A dictionary representing the contents of the YAML file.
+
+Raises
+------
+FileNotFoundError
+    If the configuration file does not exist.
+ValueError
+    If there is an error parsing the YAML file.
+
+Notes
+-----
+This function uses `yaml.safe_load` to safely parse the YAML file, ensuring only standard YAML structures are loaded.
+
+Examples
+--------
+To load a configuration file:
+    >>> config = load_yaml_config(Path("config.yaml"))
+    >>> print(config)
+    {'repo_path': '/path/to/repo', 'max_words': 100000}
+Code:
+def load_yaml_config(config_path: Path) -> dict:
+    """
+    Load a YAML configuration file.
+
+    Parameters
+    ----------
+    config_path : pathlib.Path
+        The path to the YAML configuration file to load.
+
+    Returns
+    -------
+    dict
+        A dictionary representing the contents of the YAML file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the configuration file does not exist.
+    ValueError
+        If there is an error parsing the YAML file.
+
+    Notes
+    -----
+    This function uses `yaml.safe_load` to safely parse the YAML file, ensuring only standard YAML structures are loaded.
+
+    Examples
+    --------
+    To load a configuration file:
+        >>> config = load_yaml_config(Path("config.yaml"))
+        >>> print(config)
+        {'repo_path': '/path/to/repo', 'max_words': 100000}
+    """
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+    except yaml.YAMLError as e:
+        raise ValueError(f"Error parsing YAML file: {e}")
+
+Function: validate_directory
+Docstring:
+Ensure a directory exists or create it.
+
+Parameters
+----------
+path : pathlib.Path
+    The path to the directory to validate or create.
+
+Notes
+-----
+- If the directory does not exist, it will be created, including any intermediate directories.
+- If the directory already exists, no action is taken.
+
+Examples
+--------
+To validate or create a directory:
+    >>> validate_directory(Path("/path/to/output"))
+    # If the directory doesn't exist, it will be created.
+Code:
+def validate_directory(path: Path):
+    """
+    Ensure a directory exists or create it.
+    
+    Parameters
+    ----------
+    path : pathlib.Path
+        The path to the directory to validate or create.
+    
+    Notes
+    -----
+    - If the directory does not exist, it will be created, including any intermediate directories.
+    - If the directory already exists, no action is taken.
+    
+    Examples
+    --------
+    To validate or create a directory:
+        >>> validate_directory(Path("/path/to/output"))
+        # If the directory doesn't exist, it will be created.
+    """
+
+    if not path.exists():
+        path.mkdir(parents=True, exist_ok=True)
+
+Class: SqlProcessor
+Docstring:
+Processor for SQL files.
+Code:
+class SqlProcessor(FileProcessor):
+    """
+    Processor for SQL files.
+    """
+
+    def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a file into semantic sections based on its type.
+        
+        Overrides FileProcessor.chunk_file to handle .sql files.
+        """
+        if file_path.suffix == ".sql":
+            return self.chunk_sql_file(file_path)
+        return super().chunk_file(file_path)
+
+    def chunk_sql_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a SQL file into semantic sections (statements).
+        """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if SQL Files
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+            import sqlparse
+        except ImportError:
+            raise ImportError()
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            line_count = content.count('\n') + 1
+
+            # Use sqlparse to split into statements
+            statements = sqlparse.split(content)
+            
+            for i, statement in enumerate(statements):
+                statement = statement.strip()
+                if not statement:
+                    continue
+
+                # Basic identification of statement type
+                stmt_type = "SQL Statement"
+                # Extract first word as type
+                match = re.match(r'^(\w+)', statement)
+                if match:
+                    stmt_type = match.group(1).upper()
+                
+                # Try to extract a name if CREATE/ALTER/DROP
+                name = "Unknown"
+                name_match = re.search(r'(?:TABLE|VIEW|PROCEDURE|FUNCTION|INDEX|TRIGGER)\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\s\(]+)', statement, re.IGNORECASE)
+                if name_match:
+                    name = name_match.group(1)
+
+                chunks.append({
+                    "type": "sql_statement",
+                    "sql_type": stmt_type,
+                    "name": name,
+                    "content": statement
+                })
+
+            if not chunks:
+                 return [{
+                    "type": "file",
+                    "name": file_path.name,
+                    "content": content
+                }], line_count
+
+        except Exception as e:
+            logger.warning(f"Error chunking SQL file {file_path}: {e}")
+            width_fallback = file_path.read_text(encoding="utf-8")
+            return [{
+                "type": "file",
+                "name": file_path.name,
+                "content": width_fallback
+            }], width_fallback.count('\n') + 1
+            
+        return chunks, line_count
+
+    def vectorize_sql(self, file_path: Path) -> tuple[list, int]:
+        """
+        Transforms SQL statements into semantic vectors.
+        This serves as the vectorization engine for SQL files.
+        """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if SQL Files
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+            import sqlparse
+        except ImportError:
+            raise ImportError()
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            # Initialize the embedding model
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            statements = sqlparse.split(content)
+            processed_strings = []
+            metadata = []
+
+            for i, statement in enumerate(statements):
+                statement = statement.strip()
+                if not statement:
+                    continue
+
+                # Create a semantic description
+                # For now, we use the raw statement + some context
+                stmt_type = "SQL Statement"
+                match = re.match(r'^(\w+)', statement)
+                if match:
+                    stmt_type = match.group(1).upper()
+
+                semantic_description = f"{stmt_type}: {statement}"
+                processed_strings.append(semantic_description)
+
+                metadata.append({
+                    "id": f"stmt_{i}",
+                    "type": stmt_type,
+                    "raw_text": statement
+                })
+
+            embeddings = model.encode(processed_strings)
+            return embeddings, processed_strings, metadata
+
+        except Exception as e:
+            logger.warning(f"Error vectorizing SQL file {file_path}: {e}")
+            return [], [], []
+
+    def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+        """
+        if chunk.get("type") == "sql_statement":
+            content = self._ensure_text(chunk.get("content", ""))
+            sql_type = chunk.get("sql_type", "SQL")
+            name = chunk.get("name", "Unknown")
+            return f"{sql_type}: {name}\nContent:\n{content}"
+        
+        return super().format_chunk(chunk)
+
+Function: chunk_file
+Docstring:
+Chunk a file into semantic sections based on its type.
+
+Overrides FileProcessor.chunk_file to handle .sql files.
+Code:
+def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a file into semantic sections based on its type.
+        
+        Overrides FileProcessor.chunk_file to handle .sql files.
+        """
+        if file_path.suffix == ".sql":
+            return self.chunk_sql_file(file_path)
+        return super().chunk_file(file_path)
+
+Function: chunk_sql_file
+Docstring:
+Chunk a SQL file into semantic sections (statements).
+Code:
+def chunk_sql_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a SQL file into semantic sections (statements).
+        """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if SQL Files
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+            import sqlparse
+        except ImportError:
+            raise ImportError()
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            line_count = content.count('\n') + 1
+
+            # Use sqlparse to split into statements
+            statements = sqlparse.split(content)
+            
+            for i, statement in enumerate(statements):
+                statement = statement.strip()
+                if not statement:
+                    continue
+
+                # Basic identification of statement type
+                stmt_type = "SQL Statement"
+                # Extract first word as type
+                match = re.match(r'^(\w+)', statement)
+                if match:
+                    stmt_type = match.group(1).upper()
+                
+                # Try to extract a name if CREATE/ALTER/DROP
+                name = "Unknown"
+                name_match = re.search(r'(?:TABLE|VIEW|PROCEDURE|FUNCTION|INDEX|TRIGGER)\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\s\(]+)', statement, re.IGNORECASE)
+                if name_match:
+                    name = name_match.group(1)
+
+                chunks.append({
+                    "type": "sql_statement",
+                    "sql_type": stmt_type,
+                    "name": name,
+                    "content": statement
+                })
+
+            if not chunks:
+                 return [{
+                    "type": "file",
+                    "name": file_path.name,
+                    "content": content
+                }], line_count
+
+        except Exception as e:
+            logger.warning(f"Error chunking SQL file {file_path}: {e}")
+            width_fallback = file_path.read_text(encoding="utf-8")
+            return [{
+                "type": "file",
+                "name": file_path.name,
+                "content": width_fallback
+            }], width_fallback.count('\n') + 1
+            
+        return chunks, line_count
+
+Function: vectorize_sql
+Docstring:
+Transforms SQL statements into semantic vectors.
+This serves as the vectorization engine for SQL files.
+Code:
+def vectorize_sql(self, file_path: Path) -> tuple[list, int]:
+        """
+        Transforms SQL statements into semantic vectors.
+        This serves as the vectorization engine for SQL files.
+        """
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if SQL Files
+        # ---------------------------------------------------------
+        try:
+            import re
+            from sentence_transformers import SentenceTransformer
+            import sqlparse
+        except ImportError:
+            raise ImportError()
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            
+            # Initialize the embedding model
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+
+            statements = sqlparse.split(content)
+            processed_strings = []
+            metadata = []
+
+            for i, statement in enumerate(statements):
+                statement = statement.strip()
+                if not statement:
+                    continue
+
+                # Create a semantic description
+                # For now, we use the raw statement + some context
+                stmt_type = "SQL Statement"
+                match = re.match(r'^(\w+)', statement)
+                if match:
+                    stmt_type = match.group(1).upper()
+
+                semantic_description = f"{stmt_type}: {statement}"
+                processed_strings.append(semantic_description)
+
+                metadata.append({
+                    "id": f"stmt_{i}",
+                    "type": stmt_type,
+                    "raw_text": statement
+                })
+
+            embeddings = model.encode(processed_strings)
+            return embeddings, processed_strings, metadata
+
+        except Exception as e:
+            logger.warning(f"Error vectorizing SQL file {file_path}: {e}")
+            return [], [], []
+
+Function: format_chunk
+Docstring:
+Format a chunk into plain text for saving.
+Code:
+def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+        """
+        if chunk.get("type") == "sql_statement":
+            content = self._ensure_text(chunk.get("content", ""))
+            sql_type = chunk.get("sql_type", "SQL")
+            name = chunk.get("name", "Unknown")
+            return f"{sql_type}: {name}\nContent:\n{content}"
+        
+        return super().format_chunk(chunk)
+
+Comments:
+Line 26: ---------------------------------------------------------
+Line 27: LAZY IMPORTS: Only load heavy libraries if SQL Files
+Line 28: ---------------------------------------------------------
+Line 41: Use sqlparse to split into statements
+Line 49: Basic identification of statement type
+Line 51: Extract first word as type
+Line 56: Try to extract a name if CREATE/ALTER/DROP
+Line 92: ---------------------------------------------------------
+Line 93: LAZY IMPORTS: Only load heavy libraries if SQL Files
+Line 94: ---------------------------------------------------------
+Line 105: Initialize the embedding model
+Line 117: Create a semantic description
+Line 118: For now, we use the raw statement + some context
+
+Class: ExcelProcessor
+Docstring:
+Processor for Excel files (.xlsx, .xlsm).
+Extracts semantic logic, pivot table metadata, and external dependencies.
+Code:
+class ExcelProcessor(FileProcessor):
+    """
+    Processor for Excel files (.xlsx, .xlsm).
+    Extracts semantic logic, pivot table metadata, and external dependencies.
+    """
+
+    def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk an Excel file into semantic sections.
+        Overrides FileProcessor.chunk_file to handle .xlsx files with lazy imports.
+        """
+        if file_path.suffix not in ['.xlsx', '.xlsm']:
+            return super().chunk_file(file_path)
+
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing Excel
+        # ---------------------------------------------------------
+        try:
+            import openpyxl
+            import pandas as pd
+        except ImportError as e:
+            logger.error(f"Excel processing requires 'openpyxl' and 'pandas'. Please install them. Error: {e}")
+            return [], 0
+
+        chunks = []
+        try:
+            # Load workbook using logic from PrintFormula.__init__ [1]
+            # data_only=False ensures we get formulas, not values
+            wb = openpyxl.load_workbook(str(file_path), data_only=False, keep_links=True)
+
+            # 1. Extract Formula Logic Themes (Ported from extract_logic_themes [3])
+            logic_themes = self._extract_logic_themes(wb, file_path.name)
+            if logic_themes:
+                chunks.append({
+                    "type": "excel_logic",
+                    "name": "Formula Patterns",
+                    "content": logic_themes
+                })
+
+            # 2. Extract Pivot Table Metadata (Ported from extract_pivot_logic [4])
+            pivot_logic = self._extract_pivot_logic(wb)
+            for pivot_desc in pivot_logic:
+                chunks.append({
+                    "type": "excel_pivot",
+                    "name": "Pivot Table",
+                    "content": pivot_desc
+                })
+
+            # 3. Extract Advanced Logic/External Links (Ported from extract_advanced_logic [5])
+            adv_logic = self._extract_advanced_logic(wb)
+            if adv_logic:
+                chunks.append({
+                    "type": "excel_dependencies",
+                    "name": "External Dependencies",
+                    "content": adv_logic
+                })
+
+            # Estimate 'lines' as number of populated rows across sheets
+            line_count = sum(sheet.max_row for sheet in wb.worksheets)
+
+            return chunks, line_count
+
+        except Exception as e:
+            logger.warning(f"Error chunking Excel file {file_path}: {e}")
+            return [], 0
+
+    def _extract_logic_themes(self, wb, filename: str) -> str:
+        """
+        Ported from PrintFormula.extract_logic_themes [3].
+        Normalizes formulas (e.g., =A2*B2 -> =COL_A*COL_B) to identify business logic patterns.
+        """
+        import re  # Standard lib, safe to import top-level, but kept here for encapsulation
+
+        themes = {}
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            themes[sheet_name] = {}
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    if cell.data_type == 'f':  # Formula cell [3]
+                        # Normalize formula: Remove row numbers to find the "Theme"
+                        theme_pattern = re.sub(r'\d+', '', str(cell.value))
+
+                        if theme_pattern not in themes[sheet_name]:
+                            # Get column header context [6]
+                            header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                            themes[sheet_name][theme_pattern] = {
+                                "example_formula": cell.value,
+                                "column_context": header,
+                            }
+
+        # Format for LLM consumption [6]
+        if not themes:
+            return ""
+
+        output = f"Logic Analysis for {filename}\n" + "=" * 30 + "\n"
+        for sheet, logic in themes.items():
+            if not logic: continue
+            output += f"\nSheet: {sheet}\n"
+            for pattern, details in logic.items():
+                output += (f"- Theme in '{details['column_context']}': "
+                           f"Uses logic {details['example_formula']} (Pattern: {pattern})\n")
+        return output
+
+    def _extract_pivot_logic(self, wb) -> list:
+        """
+        Ported from PrintFormula.extract_pivot_logic [4].
+        Extracts metadata about Pivot Table sources and dimensions.
+        """
+        pivot_summaries = []
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            # Access internal _pivots attribute [4]
+            if hasattr(ws, '_pivots'):
+                for pivot in ws._pivots:
+                    cache = pivot.cache
+                    source_type = "Internal Range"
+                    source_name = "Unknown"
+
+                    # Identify Source Type [4]
+                    if cache.cacheSource:
+                        cs = cache.cacheSource
+                        if cs.worksheetSource:
+                            source_type = "Worksheet Range"
+                            source_name = cs.worksheetSource.ref or "Defined Name"
+                        elif hasattr(cs, 'extRef') and cs.extRef:
+                            source_type = "External Reference"
+                            source_name = getattr(cs.extRef, 'target', 'External Link')
+
+                    # Extract Dimensions [7]
+                    fields = [f.name for f in cache.cacheFields if f.name]
+
+                    logic_desc = (
+                        f"### PIVOT TABLE: {pivot.name}\n"
+                        f"- **Location:** Sheet '{sheet_name}'\n"
+                        f"- **Data Source Type:** {source_type}\n"
+                        f"- **Source Reference:** {source_name}\n"
+                        f"- **Fields:** {', '.join(fields[:10])}\n"
+                    )
+                    pivot_summaries.append(logic_desc)
+        return pivot_summaries
+
+    def _extract_advanced_logic(self, wb) -> str:
+        """
+        Ported from PrintFormula.extract_advanced_logic [5].
+        Identifies external workbook links and LOOKUP "bridges".
+        """
+        import re
+        report = []
+
+        # 1. External Links [5]
+        if hasattr(wb, 'external_links') and wb.external_links:
+            # Note: external_values implementation varies by openpyxl version,
+            # keeping generic check based on source logic
+            report.append("### EXTERNAL DEPENDENCIES")
+            for link in wb.external_links:
+                # Attempt to get target if available
+                target = getattr(link, 'file_link', getattr(link, 'target', 'Unknown Link'))
+                report.append(f"- Links to external file: {target}")
+
+        # 2. Lookup Logic [8]
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            seen_patterns = set()
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    if cell.data_type == 'f':
+                        formula = str(cell.value)
+
+                        if "LOOKUP" in formula.upper():
+                            header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                            # Deduplicate specific lookup patterns
+                            if formula not in seen_patterns:
+                                report.append(f"- [BRIDGE] Sheet '{sheet_name}' Col '{header}' fetches data: {formula}")
+                                seen_patterns.add(formula)
+
+        return "\n".join(report)
+
+    def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+        """
+        if chunk.get("type") in ["excel_logic", "excel_pivot", "excel_dependencies"]:
+            return (f"Excel Analysis: {chunk.get('name')}\n"
+                    f"Content:\n{self._ensure_text(chunk.get('content', ''))}")
+        return super().format_chunk(chunk)
+
+Function: chunk_file
+Docstring:
+Chunk an Excel file into semantic sections.
+Overrides FileProcessor.chunk_file to handle .xlsx files with lazy imports.
+Code:
+def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk an Excel file into semantic sections.
+        Overrides FileProcessor.chunk_file to handle .xlsx files with lazy imports.
+        """
+        if file_path.suffix not in ['.xlsx', '.xlsm']:
+            return super().chunk_file(file_path)
+
+        # ---------------------------------------------------------
+        # LAZY IMPORTS: Only load heavy libraries if processing Excel
+        # ---------------------------------------------------------
+        try:
+            import openpyxl
+            import pandas as pd
+        except ImportError as e:
+            logger.error(f"Excel processing requires 'openpyxl' and 'pandas'. Please install them. Error: {e}")
+            return [], 0
+
+        chunks = []
+        try:
+            # Load workbook using logic from PrintFormula.__init__ [1]
+            # data_only=False ensures we get formulas, not values
+            wb = openpyxl.load_workbook(str(file_path), data_only=False, keep_links=True)
+
+            # 1. Extract Formula Logic Themes (Ported from extract_logic_themes [3])
+            logic_themes = self._extract_logic_themes(wb, file_path.name)
+            if logic_themes:
+                chunks.append({
+                    "type": "excel_logic",
+                    "name": "Formula Patterns",
+                    "content": logic_themes
+                })
+
+            # 2. Extract Pivot Table Metadata (Ported from extract_pivot_logic [4])
+            pivot_logic = self._extract_pivot_logic(wb)
+            for pivot_desc in pivot_logic:
+                chunks.append({
+                    "type": "excel_pivot",
+                    "name": "Pivot Table",
+                    "content": pivot_desc
+                })
+
+            # 3. Extract Advanced Logic/External Links (Ported from extract_advanced_logic [5])
+            adv_logic = self._extract_advanced_logic(wb)
+            if adv_logic:
+                chunks.append({
+                    "type": "excel_dependencies",
+                    "name": "External Dependencies",
+                    "content": adv_logic
+                })
+
+            # Estimate 'lines' as number of populated rows across sheets
+            line_count = sum(sheet.max_row for sheet in wb.worksheets)
+
+            return chunks, line_count
+
+        except Exception as e:
+            logger.warning(f"Error chunking Excel file {file_path}: {e}")
+            return [], 0
+
+Function: _extract_logic_themes
+Docstring:
+Ported from PrintFormula.extract_logic_themes [3].
+Normalizes formulas (e.g., =A2*B2 -> =COL_A*COL_B) to identify business logic patterns.
+Code:
+def _extract_logic_themes(self, wb, filename: str) -> str:
+        """
+        Ported from PrintFormula.extract_logic_themes [3].
+        Normalizes formulas (e.g., =A2*B2 -> =COL_A*COL_B) to identify business logic patterns.
+        """
+        import re  # Standard lib, safe to import top-level, but kept here for encapsulation
+
+        themes = {}
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            themes[sheet_name] = {}
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    if cell.data_type == 'f':  # Formula cell [3]
+                        # Normalize formula: Remove row numbers to find the "Theme"
+                        theme_pattern = re.sub(r'\d+', '', str(cell.value))
+
+                        if theme_pattern not in themes[sheet_name]:
+                            # Get column header context [6]
+                            header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                            themes[sheet_name][theme_pattern] = {
+                                "example_formula": cell.value,
+                                "column_context": header,
+                            }
+
+        # Format for LLM consumption [6]
+        if not themes:
+            return ""
+
+        output = f"Logic Analysis for {filename}\n" + "=" * 30 + "\n"
+        for sheet, logic in themes.items():
+            if not logic: continue
+            output += f"\nSheet: {sheet}\n"
+            for pattern, details in logic.items():
+                output += (f"- Theme in '{details['column_context']}': "
+                           f"Uses logic {details['example_formula']} (Pattern: {pattern})\n")
+        return output
+
+Function: _extract_pivot_logic
+Docstring:
+Ported from PrintFormula.extract_pivot_logic [4].
+Extracts metadata about Pivot Table sources and dimensions.
+Code:
+def _extract_pivot_logic(self, wb) -> list:
+        """
+        Ported from PrintFormula.extract_pivot_logic [4].
+        Extracts metadata about Pivot Table sources and dimensions.
+        """
+        pivot_summaries = []
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            # Access internal _pivots attribute [4]
+            if hasattr(ws, '_pivots'):
+                for pivot in ws._pivots:
+                    cache = pivot.cache
+                    source_type = "Internal Range"
+                    source_name = "Unknown"
+
+                    # Identify Source Type [4]
+                    if cache.cacheSource:
+                        cs = cache.cacheSource
+                        if cs.worksheetSource:
+                            source_type = "Worksheet Range"
+                            source_name = cs.worksheetSource.ref or "Defined Name"
+                        elif hasattr(cs, 'extRef') and cs.extRef:
+                            source_type = "External Reference"
+                            source_name = getattr(cs.extRef, 'target', 'External Link')
+
+                    # Extract Dimensions [7]
+                    fields = [f.name for f in cache.cacheFields if f.name]
+
+                    logic_desc = (
+                        f"### PIVOT TABLE: {pivot.name}\n"
+                        f"- **Location:** Sheet '{sheet_name}'\n"
+                        f"- **Data Source Type:** {source_type}\n"
+                        f"- **Source Reference:** {source_name}\n"
+                        f"- **Fields:** {', '.join(fields[:10])}\n"
+                    )
+                    pivot_summaries.append(logic_desc)
+        return pivot_summaries
+
+Function: _extract_advanced_logic
+Docstring:
+Ported from PrintFormula.extract_advanced_logic [5].
+Identifies external workbook links and LOOKUP "bridges".
+Code:
+def _extract_advanced_logic(self, wb) -> str:
+        """
+        Ported from PrintFormula.extract_advanced_logic [5].
+        Identifies external workbook links and LOOKUP "bridges".
+        """
+        import re
+        report = []
+
+        # 1. External Links [5]
+        if hasattr(wb, 'external_links') and wb.external_links:
+            # Note: external_values implementation varies by openpyxl version,
+            # keeping generic check based on source logic
+            report.append("### EXTERNAL DEPENDENCIES")
+            for link in wb.external_links:
+                # Attempt to get target if available
+                target = getattr(link, 'file_link', getattr(link, 'target', 'Unknown Link'))
+                report.append(f"- Links to external file: {target}")
+
+        # 2. Lookup Logic [8]
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            seen_patterns = set()
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    if cell.data_type == 'f':
+                        formula = str(cell.value)
+
+                        if "LOOKUP" in formula.upper():
+                            header = ws.cell(row=1, column=cell.column).value or f"Col {cell.column}"
+                            # Deduplicate specific lookup patterns
+                            if formula not in seen_patterns:
+                                report.append(f"- [BRIDGE] Sheet '{sheet_name}' Col '{header}' fetches data: {formula}")
+                                seen_patterns.add(formula)
+
+        return "\n".join(report)
+
+Function: format_chunk
+Docstring:
+Format a chunk into plain text for saving.
+Code:
+def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+        """
+        if chunk.get("type") in ["excel_logic", "excel_pivot", "excel_dependencies"]:
+            return (f"Excel Analysis: {chunk.get('name')}\n"
+                    f"Content:\n{self._ensure_text(chunk.get('content', ''))}")
+        return super().format_chunk(chunk)
+
+Comments:
+Line 21: ---------------------------------------------------------
+Line 22: LAZY IMPORTS: Only load heavy libraries if processing Excel
+Line 23: ---------------------------------------------------------
+Line 33: Load workbook using logic from PrintFormula.__init__ [1]
+Line 34: data_only=False ensures we get formulas, not values
+Line 37: 1. Extract Formula Logic Themes (Ported from extract_logic_themes [3])
+Line 46: 2. Extract Pivot Table Metadata (Ported from extract_pivot_logic [4])
+Line 55: 3. Extract Advanced Logic/External Links (Ported from extract_advanced_logic [5])
+Line 64: Estimate 'lines' as number of populated rows across sheets
+Line 78: Standard lib, safe to import top-level, but kept here for encapsulation
+Line 87: Formula cell [3]
+Line 88: Normalize formula: Remove row numbers to find the "Theme"
+Line 92: Get column header context [6]
+Line 99: Format for LLM consumption [6]
+Line 120: Access internal _pivots attribute [4]
+Line 127: Identify Source Type [4]
+Line 137: Extract Dimensions [7]
+Line 158: 1. External Links [5]
+Line 160: Note: external_values implementation varies by openpyxl version,
+Line 161: keeping generic check based on source logic
+Line 164: Attempt to get target if available
+Line 168: 2. Lookup Logic [8]
+Line 180: Deduplicate specific lookup patterns
+
+Function: save_json
+Docstring:
+Save a dictionary to a JSON file with error handling.
+
+Parameters
+----------
+data : dict
+    The data to be saved as a JSON file.
+file_path : pathlib.Path
+    The path where the JSON file should be saved.
+description : str
+    A description of the file being saved, used in logging messages.
+
+Raises
+------
+Exception
+    If an error occurs during saving, it will be logged but not raised.
+
+Notes
+-----
+This function logs both successful saves and any errors encountered.
+Code:
+def save_json(data: dict, file_path: Path, description: str):
+    """
+    Save a dictionary to a JSON file with error handling.
+
+    Parameters
+    ----------
+    data : dict
+        The data to be saved as a JSON file.
+    file_path : pathlib.Path
+        The path where the JSON file should be saved.
+    description : str
+        A description of the file being saved, used in logging messages.
+
+    Raises
+    ------
+    Exception
+        If an error occurs during saving, it will be logged but not raised.
+
+    Notes
+    -----
+    This function logs both successful saves and any errors encountered.
+    """
+
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"{description} saved to {file_path}")
+    except Exception as e:
+        logger.error(f"Error saving {description}: {e}")
+
+Function: compute_file_hash
+Docstring:
+Compute the MD5 hash of a file.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file whose hash is to be computed.
+
+Returns
+-------
+str or None
+    The MD5 hash of the file as a hexadecimal string, or None if an error occurs.
+
+Raises
+------
+Exception
+    If the file cannot be read, the error is logged and None is returned.
+
+Notes
+-----
+MD5 is not suitable for cryptographic purposes but is sufficient for file integrity checks.
+Code:
+def compute_file_hash(file_path: Path) -> str:
+    """
+    Compute the MD5 hash of a file.
+
+    Parameters
+    ----------
+    file_path : pathlib.Path
+        The path to the file whose hash is to be computed.
+
+    Returns
+    -------
+    str or None
+        The MD5 hash of the file as a hexadecimal string, or None if an error occurs.
+
+    Raises
+    ------
+    Exception
+        If the file cannot be read, the error is logged and None is returned.
+
+    Notes
+    -----
+    MD5 is not suitable for cryptographic purposes but is sufficient for file integrity checks.
+    """
+
+    hash_md5 = hashlib.md5()
+    try:
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+    except Exception as e:
+        logger.error(f"Error computing hash for {file_path}: {e}")
+        return None
+    return hash_md5.hexdigest()
+
+Function: load_json
+Docstring:
+Load a JSON file into a dictionary with error handling.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the JSON file to be loaded.
+description : str
+    A description of the file being loaded, used in logging messages.
+
+Returns
+-------
+dict
+    The contents of the JSON file as a dictionary. Returns an empty dictionary if the file cannot be loaded.
+
+Raises
+------
+Exception
+    If an error occurs during file loading, it will be logged but not raised.
+Code:
+def load_json(file_path: Path, description: str) -> dict:
+    """
+    Load a JSON file into a dictionary with error handling.
+
+    Parameters
+    ----------
+    file_path : pathlib.Path
+        The path to the JSON file to be loaded.
+    description : str
+        A description of the file being loaded, used in logging messages.
+
+    Returns
+    -------
+    dict
+        The contents of the JSON file as a dictionary. Returns an empty dictionary if the file cannot be loaded.
+
+    Raises
+    ------
+    Exception
+        If an error occurs during file loading, it will be logged but not raised.
+    """
+
+    if file_path.exists():
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading {description}: {e}")
+    return {}
+
+Function: is_documentation_file
+Docstring:
+Check if a file is a documentation file based on its name.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file being checked.
+
+Returns
+-------
+bool
+    True if the file is recognized as a documentation file, otherwise False.
+
+Notes
+-----
+This function specifically checks for common documentation filenames such as 'README.md' or 'CHANGELOG.md'.
+Code:
+def is_documentation_file(file_path: Path) -> bool:
+    """
+    Check if a file is a documentation file based on its name.
+
+    Parameters
+    ----------
+    file_path : pathlib.Path
+        The path to the file being checked.
+
+    Returns
+    -------
+    bool
+        True if the file is recognized as a documentation file, otherwise False.
+
+    Notes
+    -----
+    This function specifically checks for common documentation filenames such as 'README.md' or 'CHANGELOG.md'.
+    """
+
+    documentation_files = ["README.md", "README.rst", "CONTRIBUTING.md", "CHANGELOG.md"]
+    return file_path.name in documentation_files
+
+Function: read_file_in_chunks
+Docstring:
+Read a file in chunks to handle large files efficiently.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file to be read.
+chunk_size : int, optional
+    The size of each chunk in bytes. Default is 4096.
+
+Yields
+------
+str
+    A chunk of the file as a string.
+
+Notes
+-----
+This function is useful for processing very large files without loading them entirely into memory.
+Code:
+def read_file_in_chunks(file_path: Path, chunk_size: int = 4096):
+    """
+    Read a file in chunks to handle large files efficiently.
+
+    Parameters
+    ----------
+    file_path : pathlib.Path
+        The path to the file to be read.
+    chunk_size : int, optional
+        The size of each chunk in bytes. Default is 4096.
+
+    Yields
+    ------
+    str
+        A chunk of the file as a string.
+
+    Notes
+    -----
+    This function is useful for processing very large files without loading them entirely into memory.
+    """
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        while chunk := file.read(chunk_size):
+            yield chunk
+
+Class: FileProcessor
+Docstring:
+Class for handling file processing logic.
+
+This class provides methods for chunking files based on their type, including Python files, Markdown files, and others.
+
+Attributes
+----------
+repo_path : pathlib.Path
+    The path to the repository being processed.
+output_dir : pathlib.Path
+    The directory where processed output will be saved.
+
+Methods
+-------
+chunk_python_file(file_path)
+    Chunk a Python file into semantic sections.
+chunk_markdown_file(file_path)
+    Chunk a Markdown file into sections based on headers.
+chunk_file(file_path)
+    Chunk a file into semantic sections based on its type.
+Code:
+class FileProcessor:
+    """
+    Class for handling file processing logic.
+
+    This class provides methods for chunking files based on their type, including Python files, Markdown files, and others.
+
+    Attributes
+    ----------
+    repo_path : pathlib.Path
+        The path to the repository being processed.
+    output_dir : pathlib.Path
+        The directory where processed output will be saved.
+
+    Methods
+    -------
+    chunk_python_file(file_path)
+        Chunk a Python file into semantic sections.
+    chunk_markdown_file(file_path)
+        Chunk a Markdown file into sections based on headers.
+    chunk_file(file_path)
+        Chunk a file into semantic sections based on its type.
+    """
+
+    def __init__(self, repo_path: Path, output_dir: Path):
+        self.repo_path = repo_path.resolve()
+        self.output_dir = output_dir.resolve()
+        validate_directory(self.output_dir)
+
+    def _ensure_text(self, value):
+        """
+        Ensure the provided value is text. If it's a list, join elements; otherwise convert to str.
+        """
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            # join list of strings or list of objects coerced to strings
+            return "\n".join(map(lambda x: x if isinstance(x, str) else str(x), value))
+        return str(value)
+
+    def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+
+        Parameters
+        ----------
+        chunk : dict
+            The chunk of content to format.
+
+        Returns
+        -------
+        str
+            A formatted plain-text representation of the chunk.
+        """
+        # Defensive: if chunk is not a dict, coerce and return
+        if not isinstance(chunk, dict):
+            logger.warning(f"format_chunk expected dict, got {type(chunk)}; coercing to string.")
+            return str(chunk)
+
+        chunk_type = chunk.get("type", "unknown")
+        if chunk_type == "function":
+            docstring = chunk.get("docstring") or ""
+            docstring = self._ensure_text(docstring)
+            code = self._ensure_text(chunk.get("code", ""))
+            doc_part = ('\nDocstring:\n' + docstring) if docstring else ''
+            return f"Function: {chunk.get('name')}{doc_part}\nCode:\n{code}"
+        elif chunk_type == "class":
+            docstring = chunk.get("docstring") or ""
+            docstring = self._ensure_text(docstring)
+            code = self._ensure_text(chunk.get("code", ""))
+            doc_part = ('\nDocstring:\n' + docstring) if docstring else ''
+            return f"Class: {chunk.get('name')}{doc_part}\nCode:\n{code}"
+        elif chunk_type == "comments":
+            content = chunk.get("content", [])
+            # content may be a list of dicts or strings
+            if isinstance(content, list):
+                comments = []
+                for c in content:
+                    if isinstance(c, dict):
+                        comments.append(f"Line {c.get('line')}: {c.get('text')}")
+                    else:
+                        comments.append(self._ensure_text(c))
+                comments_text = "\n".join(comments)
+            else:
+                comments_text = self._ensure_text(content)
+            return f"Comments:\n{comments_text}"
+        elif chunk_type == "file":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"File: {chunk.get('name')}\nContent:\n{content}"
+        elif chunk_type == "html_script":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"HTML Script:\n{content}"
+        elif chunk_type == "html_style":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"HTML Style:\n{content}"
+        elif chunk_type == "css_rule":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"CSS Rule:\n{content}"
+        else:
+            # Unknown chunk: turn it into a string representation
+            return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
+
+    def chunk_python_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a Python file into semantic sections, including code, functions, and comments.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the Python file to be chunked.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionaries where each dictionary represents a chunk with metadata and content.
+
+        Notes
+        -----
+        The chunks include functions, classes, and inline comments. Each chunk contains the following keys:
+        - 'type': The type of the chunk (e.g., 'function', 'class', 'comments').
+        - 'name': The name of the function or class (if applicable).
+        - 'docstring': The docstring associated with the function or class.
+        - 'code': The actual code of the function or class.
+        - 'line_count': The number of lines in the file.
+        """
+
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                file_content = f.read()
+
+            lines = file_content.splitlines()
+            line_count = len(lines)
+
+            # Extract functions and classes using AST
+            tree = ast.parse(file_content, filename=file_path)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    func_name = node.name
+                    code_snippet = ast.get_source_segment(file_content, node)
+                    chunks.append({
+                        "type": "function",
+                        "name": func_name,
+                        "docstring": ast.get_docstring(node),
+                        "code": code_snippet
+                    })
+                elif isinstance(node, ast.ClassDef):
+                    class_name = node.name
+                    code_snippet = ast.get_source_segment(file_content, node)
+                    methods = []
+                    for class_node in node.body:
+                        if isinstance(class_node, ast.FunctionDef):
+                            method_name = class_node.name
+                            methods.append({
+                                "name": method_name,
+                            })
+                    chunks.append({
+                        "type": "class",
+                        "name": class_name,
+                        "methods": methods,
+                        "docstring": ast.get_docstring(node),
+                        "code": code_snippet
+                    })
+
+            # Extract inline comments using tokenize
+            tokens = tokenize.generate_tokens(StringIO(file_content).readline)
+            comments = []
+            for token in tokens:
+                if token.type == tokenize.COMMENT:
+                    line_number = token.start[0]
+                    comment_text = token.string.lstrip("#").strip()
+                    comments.append({
+                        "type": "comment",
+                        "line": line_number,
+                        "text": comment_text
+                    })
+            if comments:
+                chunks.append({"type": "comments", "content": comments})
+
+        except Exception as e:
+            logger.warning(f"Error chunking Python file {file_path}: {e}")
+        return chunks, line_count if 'line_count' in locals() else 0
+
+    def chunk_markdown_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a Markdown file into sections based on headers.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the Markdown file to be chunked.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionaries where each dictionary represents a chunk with a header and its associated content.
+
+        Notes
+        -----
+        Each chunk contains the following keys:
+        - 'header': The header text (e.g., '# Title').
+        - 'content': The content under the header.
+        """
+
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            line_count = len(lines)
+    
+            current_chunk = {"header": None, "content": ""}
+            for line in lines:
+                if line.startswith("#"):  # Header
+                    if current_chunk["header"] or current_chunk["content"].strip():
+                        chunks.append(current_chunk)
+                    current_chunk = {"header": line.strip(), "content": ""}
+                else:
+                    current_chunk["content"] += line
+            if current_chunk["header"] or current_chunk["content"].strip():
+                chunks.append(current_chunk)
+        except Exception as e:
+            logger.warning(f"Error chunking Markdown file {file_path}: {e}")
+        return chunks, line_count if 'line_count' in locals() else 0
+
+    def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a file into semantic sections based on its type.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file to be chunked.
+
+        Returns
+        -------
+        tuple[list, int]
+            A tuple containing a list of chunks and the total number of lines in the file.
+
+        Notes
+        -----
+        This method delegates to type-specific chunking methods based on the file extension. 
+        For unsupported types, the entire file content is treated as a single chunk.
+        """
+        suffix = file_path.suffix
+        if suffix == ".py":
+            return self.chunk_python_file(file_path)
+        elif suffix in [".md", ".markdown"]:
+            return self.chunk_markdown_file(file_path)
+        elif suffix in FILE_TYPE_MAP:
+            return self.chunk_tree_sitter_file(file_path, suffix)
+        # elif suffix == ".sql":
+        #     # Assumes SqlProcessor logic is available or mixed-in [9]
+        #     return self.chunk_sql_file(file_path)
+        # elif suffix == ".tmdl":
+        #     # Assumes PBIProcessor logic is available or mixed-in [10]
+        #     return self.chunk_tmdl_file(file_path)
+        # elif suffix in ['.xlsx', '.xlsm']:
+        #     # Delegate to the ExcelProcessor logic
+        #     # If using mixins: return self.chunk_excel_file(file_path)
+        #     # If using composition:
+        #     return ExcelProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
+        else:
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                line_count = content.count('\n') + 1
+                return ([{
+                    "type": "file",
+                    "name": file_path.name,
+                    "content": content
+                }], line_count)
+            except Exception as e:
+                logger.warning(f"Error reading file {file_path}: {e}")
+                return [], 0
+
+
+    def chunk_tree_sitter_file(self, file_path: Path, suffix: str) -> tuple[list, int]:
+        """
+        Chunk a file using tree-sitter for supported languages.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file to be chunked.
+        suffix : str
+            The file suffix (extension) to determine the language.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionaries, each representing a semantic chunk with keys like 'type', 'name', and 'code' or 'content'.
+
+        Notes
+        -----
+        Supports semantic extraction for JavaScript/TypeScript (functions, classes, arrow functions), Java (methods, classes), C/C++ (functions, structs), HTML (scripts, styles), and CSS (rules). Fall[...]
+        """
+        try:
+            source = file_path.read_text(encoding="utf-8")
+            line_count = source.count('\n') + 1
+            lang_name = FILE_TYPE_MAP[suffix]
+
+            chunks = []
+            if lang_name == "html":
+                # Simple regex fallback for tags
+                import re
+                scripts = re.findall(r'<script[^>]*>(.*?)</script>', source, re.DOTALL | re.IGNORECASE)
+                for script in scripts:
+                    chunks.append({"type": "html_script", "content": script.strip()})
+                styles = re.findall(r'<style[^>]*>(.*?)</style>', source, re.DOTALL | re.IGNORECASE)
+                for style in styles:
+                    chunks.append({"type": "html_style", "content": style.strip()})
+                if not chunks:
+                    chunks = [{"type": "html", "content": source}]
+
+            # CSS: Chunk by rules
+            elif lang_name == "css":
+                import re
+                rules = re.split(r'([@][^{]+{[^}]*}|{[^{}]*})', source)
+                for rule in rules:
+                    if rule.strip() and '{' in rule:
+                        chunks.append({"type": "css_rule", "content": rule.strip()})
+                if not chunks:
+                    chunks = [{"type": "css", "content": source}]
+
+            if not chunks:
+                chunks = [{"type": "file", "name": file_path.name, "content": source}]
+
+            return chunks, line_count
+        except Exception as e:
+            logger.warning(f"Error chunking {suffix} file {file_path}: {e}")
+            content = file_path.read_text(encoding="utf-8")
+            return [{"type": "file", "name": file_path.name, "content": content}], content.count('\n') + 1
+
+Class: RepoContentProcessor
+Docstring:
+Class for processing an entire repository.
+
+This class orchestrates file-level processing, manages metadata, and saves the results to disk.
+
+Attributes
+----------
+repo_path : pathlib.Path
+    The path to the repository being processed.
+output_dir : pathlib.Path
+    The directory where processed output will be saved.
+max_words : int
+    The maximum number of words allowed per output chunk.
+max_file_size : int
+    The maximum file size (in bytes) for processing.
+skip_patterns : list of str
+    Patterns for files to skip.
+skip_dirs : list of str
+    Directory names to skip.
+ignore_patterns : pathspec.PathSpec
+    Compiled patterns for ignoring files.
+current_word_count : int
+    The current word count for the current chunk.
+content : str
+    The current content being accumulated for a chunk.
+hashes : dict
+    Cached file hashes to avoid reprocessing unchanged files.
+file_counter : collections.defaultdict
+    Counter for output files by type.
+metadata : dict
+    Metadata about processed and skipped files.
+
+Methods
+-------
+load_ignore_patterns()
+    Load ignore patterns from .gitignore and .dockerignore files.
+should_skip(file_path)
+    Determine if a file or directory should be skipped.
+save_chunk(chunk, subdir)
+    Save a chunk of content to a file.
+save_content(subdir)
+    Save the accumulated content to a file.
+process_file(file_path)
+    Process a single file, chunking and saving its content.
+process_repo()
+    Process all files in the repository.
+get_file_type_subdir(file_path)
+    Determine the output subdirectory for a file based on its type.
+Code:
+class RepoContentProcessor:
+    """
+    Class for processing an entire repository.
+
+    This class orchestrates file-level processing, manages metadata, and saves the results to disk.
+
+    Attributes
+    ----------
+    repo_path : pathlib.Path
+        The path to the repository being processed.
+    output_dir : pathlib.Path
+        The directory where processed output will be saved.
+    max_words : int
+        The maximum number of words allowed per output chunk.
+    max_file_size : int
+        The maximum file size (in bytes) for processing.
+    skip_patterns : list of str
+        Patterns for files to skip.
+    skip_dirs : list of str
+        Directory names to skip.
+    ignore_patterns : pathspec.PathSpec
+        Compiled patterns for ignoring files.
+    current_word_count : int
+        The current word count for the current chunk.
+    content : str
+        The current content being accumulated for a chunk.
+    hashes : dict
+        Cached file hashes to avoid reprocessing unchanged files.
+    file_counter : collections.defaultdict
+        Counter for output files by type.
+    metadata : dict
+        Metadata about processed and skipped files.
+
+    Methods
+    -------
+    load_ignore_patterns()
+        Load ignore patterns from .gitignore and .dockerignore files.
+    should_skip(file_path)
+        Determine if a file or directory should be skipped.
+    save_chunk(chunk, subdir)
+        Save a chunk of content to a file.
+    save_content(subdir)
+        Save the accumulated content to a file.
+    process_file(file_path)
+        Process a single file, chunking and saving its content.
+    process_repo()
+        Process all files in the repository.
+    get_file_type_subdir(file_path)
+        Determine the output subdirectory for a file based on its type.
+    """
+
+    def __init__(self, repo_path: Path, output_dir: Path, max_words: int = 200000, max_file_size: int = 10 * 1024 * 1024, skip_patterns: list = None, skip_dirs: list = None, processor_class=FileProcessor):
+        self.repo_path = repo_path.resolve()
+        self.output_dir = output_dir.resolve()
+        self.max_words = max_words
+        self.max_file_size = max_file_size
+        self.skip_patterns = skip_patterns or [".git"]
+        self.skip_dirs = skip_dirs or ["node_modules", "__pycache__"]
+        self.ignore_patterns = self.load_ignore_patterns()
+        self.word_counts = defaultdict(int)
+        self.content_buffers = defaultdict(str)
+        self.hashes = load_json(self.output_dir / "hashes.json", "hashes")
+        self.file_counter = defaultdict(int)
+        self.metadata = {
+            "processed_files": [],
+            "skipped_files": [],
+            "summary": {"total_files_processed": 0, "total_words": 0}
+        }
+        self.file_processor = processor_class(self.repo_path, self.output_dir)
+
+        validate_directory(self.output_dir)
+
+    def load_ignore_patterns(self) -> pathspec.PathSpec:
+        """
+        Load patterns from .gitignore and .dockerignore files if they exist.
+
+        Returns
+        -------
+        pathspec.PathSpec
+            A compiled PathSpec object containing all ignore patterns.
+
+        Notes
+        -----
+        Additional patterns provided via `skip_patterns` are also included. 
+        If the ignore files are missing, only the additional patterns are used.
+        """
+
+        ignore_patterns = []
+
+        for ignore_file in [".gitignore", ".dockerignore"]:
+            file_path = self.repo_path / ignore_file
+            if file_path.exists():
+                logger.info(f"Loading ignore patterns from {ignore_file}")
+                with open(file_path, "r", encoding="utf-8") as f:
+                    ignore_patterns.extend(f.readlines())
+
+        # Add additional skip_patterns
+        ignore_patterns.extend(self.skip_patterns)
+
+        # Add skip_dirs to ignore patterns to handle recursion
+        for skip_dir in self.skip_dirs:
+            ignore_patterns.append(f"{skip_dir}/")
+
+        # Compile patterns using pathspec
+        return pathspec.PathSpec.from_lines("gitwildmatch", ignore_patterns)
+
+    def should_skip(self, file_path: Path) -> bool:
+        """
+        Determine if a file or directory should be skipped based on patterns.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file or directory to check.
+
+        Returns
+        -------
+        bool
+            True if the file or directory should be skipped, otherwise False.
+
+        Notes
+        -----
+        This method checks against ignore patterns and explicit directory or file size limits.
+        """
+
+        # Check if the path matches .gitignore or .dockerignore patterns
+        relative_path = file_path.relative_to(self.repo_path)
+        if self.ignore_patterns.match_file(str(relative_path)):
+            logger.info(f"Skipping {relative_path} due to ignore pattern.")
+            return True
+
+        # Skip directories explicitly listed
+        if file_path.is_dir() and file_path.name in self.skip_dirs:
+            logger.info(f"Skipped directory: {file_path}")
+            return True
+
+        # Skip large files
+        if file_path.is_file() and file_path.stat().st_size > self.max_file_size:
+            self.metadata["skipped_files"].append({
+                "path": str(file_path),
+                "reason": "File exceeds size limit"
+            })
+            logger.info(f"Skipped file due to size: {file_path}")
+            return True
+
+        return False
+
+    def save_chunk(self, chunk: dict, subdir: Path):
+        """
+        Save a chunk of content to a text file.
+
+        Parameters
+        ----------
+        chunk : dict
+            The chunk of content to save.
+        subdir : pathlib.Path
+            The subdirectory where the chunk should be saved.
+        """
+        formatted = self.file_processor.format_chunk(chunk)
+        # Defensive: ensure formatted is a string
+        if not isinstance(formatted, str):
+            logger.warning(f"format_chunk returned non-str for chunk (type: {type(chunk)}); coercing to str.")
+            formatted = str(formatted)
+
+        chunk_word_count = len(formatted.split())
+        subdir_key = str(subdir)  # Ensure key is string
+        if self.word_counts[subdir_key] + chunk_word_count > self.max_words:
+            self.save_content(subdir)
+        self.content_buffers[subdir_key] += formatted + "\n\n"
+        self.word_counts[subdir_key] += chunk_word_count
+
+
+    def save_content(self, subdir: Path):
+        """
+        Save the accumulated content to a file.
+
+        This method writes the currently accumulated content to a file in the specified subdirectory.
+        After saving, the content and word count are reset for the next chunk.
+
+        Parameters
+        ----------
+        subdir : pathlib.Path
+            The subdirectory within the output directory where the chunk file should be saved.
+
+        Notes
+        -----
+        - The file is named `chunk_<counter>.json`, where `<counter>` is an incrementing number for the subdirectory.
+        - If the subdirectory does not exist, it is created automatically.
+        - Once the content is saved, the internal buffer (`self.content`) and the current word count (`self.current_word_count`) are reset to prepare for the next chunk.
+
+        Examples
+        --------
+        To save the current content to a subdirectory:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.content = "This is some chunked content."
+            >>> processor.current_word_count = 5
+            >>> processor.save_content(Path("python"))
+
+        Raises
+        ------
+        OSError
+            If the file cannot be created or written, an error is logged.
+        """
+
+        
+        subdir_key = str(subdir)
+        content = self.content_buffers.get(subdir_key, "")
+        if content:
+            file_path = self.output_dir / subdir / f"chunk_{self.file_counter[subdir]}.txt"
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"Saved chunk to {file_path}")
+            self.file_counter[subdir] += 1
+            self.content_buffers[subdir_key] = ""
+            self.word_counts[subdir_key] = 0
+            
+    def process_file(self, file_path: Path):
+        """
+        Process a single file.
+
+        This method handles the processing of a single file by checking its hash for changes, chunking its content, and saving the resulting chunks.
+        Metadata about the processed file is updated, and any errors are logged.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file to be processed.
+
+        Notes
+        -----
+        - Files that have unchanged hashes (compared to the cached hashes) are skipped.
+        - Skipped files are logged in the `metadata['skipped_files']` list with reasons for skipping.
+        - Processed files are chunked based on their type, and each chunk is saved to the appropriate subdirectory.
+        - Metadata about processed files, such as the number of chunks, file size, number of lines, and total words, is recorded.
+
+        Raises
+        ------
+        Exception
+            Any errors encountered during file processing are logged and added to the skipped files list, but do not halt execution.
+
+        Examples
+        --------
+        To process a file:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.process_file(Path("repo/example.py"))
+        """
+
+        try:
+            current_hash = compute_file_hash(file_path)
+            if not current_hash:
+                self.metadata["skipped_files"].append({"path": str(file_path), "reason": "Error computing file hash"})
+                logger.warning(f"Skipped file due to hash error: {file_path}")
+                return
+
+            relative_path = str(file_path.relative_to(self.repo_path))
+            if relative_path in self.hashes and self.hashes[relative_path] == current_hash:
+                self.metadata["skipped_files"].append({"path": relative_path, "reason": "Unchanged file (hash match)"})
+                logger.info(f"Skipped unchanged file: {file_path}")
+                return
+
+            subdir = self.get_file_type_subdir(file_path)
+            chunks, line_count = self.file_processor.chunk_file(file_path)
+            for chunk in chunks:
+                self.save_chunk(chunk, subdir)
+
+            # compute words safely: format_chunk always returns a string now
+            words_in_chunks = sum(len(self.file_processor.format_chunk(chunk).split()) for chunk in chunks)
+            self.metadata["processed_files"].append({
+                "path": relative_path,
+                "chunks": len(chunks),
+                "size": file_path.stat().st_size,
+                "lines": line_count,
+                "words": words_in_chunks
+            })
+            self.metadata["summary"]["total_files_processed"] += 1
+            self.metadata["summary"]["total_words"] += words_in_chunks
+            self.hashes[relative_path] = current_hash
+        except Exception as e:
+            logger.warning(f"Error processing file {file_path}: {e}")
+            self.metadata["skipped_files"].append({"path": str(file_path), "reason": f"Error processing file: {e}"})
+
+    def process_repo(self):
+        """
+        Process all files in the repository.
+
+        This method iterates over all files in the specified repository directory. It skips files and directories 
+        based on ignore patterns and file size limits, processes supported file types, and saves the results. 
+        Metadata about processed and skipped files is recorded, and the final results are saved to the output directory.
+
+        Notes
+        -----
+        - Files are processed based on their type (e.g., Python files, Markdown files).
+        - Skipped files and directories are logged in the `metadata['skipped_files']`.
+        - Processed files are chunked, and their metadata is updated in `metadata['processed_files']`.
+        - All metadata and hash information is saved to the output directory at the end of processing.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        Exception
+            Errors during individual file processing are logged and added to the skipped files list, but do not halt execution.
+
+        Examples
+        --------
+        To process a repository:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.process_repo()
+
+        Metadata Example:
+            After processing, metadata is saved as JSON:
+            {
+                "processed_files": [
+                    {
+                        "path": "example.py",
+                        "chunks": 3,
+                        "size": 2048,
+                        "lines": 50,
+                        "words": 300
+                    }
+                ],
+                "skipped_files": [
+                    {
+                        "path": ".git/config",
+                        "reason": "Matches ignore pattern"
+                    }
+                ],
+                "summary": {
+                    "total_files_processed": 10,
+                    "total_words": 5000
+                }
+            }
+        """
+
+        logger.info(f"Processing repository: {self.repo_path}")
+        total_files = sum(1 for _ in self.repo_path.rglob("*"))
+        file_count = 0
+
+        for file_path in self.repo_path.rglob("*"):
+            file_count += 1
+            logger.info(f"Processing file {file_count}/{total_files}: {file_path}")
+            if self.should_skip(file_path):
+                continue
+
+            if file_path.is_file():
+                self.process_file(file_path)
+
+        save_json(self.metadata, self.output_dir / "metadata.json", "Metadata")
+        save_json(self.hashes, self.output_dir / "hashes.json", "Hashes")
+
+        # Flush all remaining buffers
+        for subdir_key in list(self.content_buffers.keys()):
+            if self.content_buffers[subdir_key]:
+                self.save_content(Path(subdir_key))
+
+        logger.info("Repository processing complete.")
+
+    def get_file_type_subdir(self, file_path: Path) -> str:
+        """
+        Determine the subdirectory for a file based on its type.
+
+        This method maps a file's extension to a predefined subdirectory name using the `FILE_TYPE_MAP` dictionary.
+        If the file extension is not recognized, it defaults to "other".
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file whose subdirectory is being determined.
+
+        Returns
+        -------
+        str
+            The name of the subdirectory where the file should be categorized.
+            For example, "python" for `.py` files, "markdown" for `.md` files, and "other" for unrecognized file types.
+
+        Notes
+        -----
+        - The `FILE_TYPE_MAP` dictionary defines the mappings between file extensions and subdirectory names.
+        - This method ensures that files are categorized consistently based on their type.
+
+        Examples
+        --------
+        To get the subdirectory for a file:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.get_file_type_subdir(Path("example.py"))
+            'python'
+
+            >>> processor.get_file_type_subdir(Path("README.md"))
+            'markdown'
+
+            >>> processor.get_file_type_subdir(Path("unknown.xyz"))
+            'other'
+        """
+
+        return FILE_TYPE_MAP.get(file_path.suffix, "other")
+
+Function: __init__
+Code:
+def __init__(self, repo_path: Path, output_dir: Path):
+        self.repo_path = repo_path.resolve()
+        self.output_dir = output_dir.resolve()
+        validate_directory(self.output_dir)
+
+Function: _ensure_text
+Docstring:
+Ensure the provided value is text. If it's a list, join elements; otherwise convert to str.
+Code:
+def _ensure_text(self, value):
+        """
+        Ensure the provided value is text. If it's a list, join elements; otherwise convert to str.
+        """
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            # join list of strings or list of objects coerced to strings
+            return "\n".join(map(lambda x: x if isinstance(x, str) else str(x), value))
+        return str(value)
+
+Function: format_chunk
+Docstring:
+Format a chunk into plain text for saving.
+
+Parameters
+----------
+chunk : dict
+    The chunk of content to format.
+
+Returns
+-------
+str
+    A formatted plain-text representation of the chunk.
+Code:
+def format_chunk(self, chunk: dict) -> str:
+        """
+        Format a chunk into plain text for saving.
+
+        Parameters
+        ----------
+        chunk : dict
+            The chunk of content to format.
+
+        Returns
+        -------
+        str
+            A formatted plain-text representation of the chunk.
+        """
+        # Defensive: if chunk is not a dict, coerce and return
+        if not isinstance(chunk, dict):
+            logger.warning(f"format_chunk expected dict, got {type(chunk)}; coercing to string.")
+            return str(chunk)
+
+        chunk_type = chunk.get("type", "unknown")
+        if chunk_type == "function":
+            docstring = chunk.get("docstring") or ""
+            docstring = self._ensure_text(docstring)
+            code = self._ensure_text(chunk.get("code", ""))
+            doc_part = ('\nDocstring:\n' + docstring) if docstring else ''
+            return f"Function: {chunk.get('name')}{doc_part}\nCode:\n{code}"
+        elif chunk_type == "class":
+            docstring = chunk.get("docstring") or ""
+            docstring = self._ensure_text(docstring)
+            code = self._ensure_text(chunk.get("code", ""))
+            doc_part = ('\nDocstring:\n' + docstring) if docstring else ''
+            return f"Class: {chunk.get('name')}{doc_part}\nCode:\n{code}"
+        elif chunk_type == "comments":
+            content = chunk.get("content", [])
+            # content may be a list of dicts or strings
+            if isinstance(content, list):
+                comments = []
+                for c in content:
+                    if isinstance(c, dict):
+                        comments.append(f"Line {c.get('line')}: {c.get('text')}")
+                    else:
+                        comments.append(self._ensure_text(c))
+                comments_text = "\n".join(comments)
+            else:
+                comments_text = self._ensure_text(content)
+            return f"Comments:\n{comments_text}"
+        elif chunk_type == "file":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"File: {chunk.get('name')}\nContent:\n{content}"
+        elif chunk_type == "html_script":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"HTML Script:\n{content}"
+        elif chunk_type == "html_style":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"HTML Style:\n{content}"
+        elif chunk_type == "css_rule":
+            content = self._ensure_text(chunk.get("content", ""))
+            return f"CSS Rule:\n{content}"
+        else:
+            # Unknown chunk: turn it into a string representation
+            return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
+
+Function: chunk_python_file
+Docstring:
+Chunk a Python file into semantic sections, including code, functions, and comments.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the Python file to be chunked.
+
+Returns
+-------
+list of dict
+    A list of dictionaries where each dictionary represents a chunk with metadata and content.
+
+Notes
+-----
+The chunks include functions, classes, and inline comments. Each chunk contains the following keys:
+- 'type': The type of the chunk (e.g., 'function', 'class', 'comments').
+- 'name': The name of the function or class (if applicable).
+- 'docstring': The docstring associated with the function or class.
+- 'code': The actual code of the function or class.
+- 'line_count': The number of lines in the file.
+Code:
+def chunk_python_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a Python file into semantic sections, including code, functions, and comments.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the Python file to be chunked.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionaries where each dictionary represents a chunk with metadata and content.
+
+        Notes
+        -----
+        The chunks include functions, classes, and inline comments. Each chunk contains the following keys:
+        - 'type': The type of the chunk (e.g., 'function', 'class', 'comments').
+        - 'name': The name of the function or class (if applicable).
+        - 'docstring': The docstring associated with the function or class.
+        - 'code': The actual code of the function or class.
+        - 'line_count': The number of lines in the file.
+        """
+
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                file_content = f.read()
+
+            lines = file_content.splitlines()
+            line_count = len(lines)
+
+            # Extract functions and classes using AST
+            tree = ast.parse(file_content, filename=file_path)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    func_name = node.name
+                    code_snippet = ast.get_source_segment(file_content, node)
+                    chunks.append({
+                        "type": "function",
+                        "name": func_name,
+                        "docstring": ast.get_docstring(node),
+                        "code": code_snippet
+                    })
+                elif isinstance(node, ast.ClassDef):
+                    class_name = node.name
+                    code_snippet = ast.get_source_segment(file_content, node)
+                    methods = []
+                    for class_node in node.body:
+                        if isinstance(class_node, ast.FunctionDef):
+                            method_name = class_node.name
+                            methods.append({
+                                "name": method_name,
+                            })
+                    chunks.append({
+                        "type": "class",
+                        "name": class_name,
+                        "methods": methods,
+                        "docstring": ast.get_docstring(node),
+                        "code": code_snippet
+                    })
+
+            # Extract inline comments using tokenize
+            tokens = tokenize.generate_tokens(StringIO(file_content).readline)
+            comments = []
+            for token in tokens:
+                if token.type == tokenize.COMMENT:
+                    line_number = token.start[0]
+                    comment_text = token.string.lstrip("#").strip()
+                    comments.append({
+                        "type": "comment",
+                        "line": line_number,
+                        "text": comment_text
+                    })
+            if comments:
+                chunks.append({"type": "comments", "content": comments})
+
+        except Exception as e:
+            logger.warning(f"Error chunking Python file {file_path}: {e}")
+        return chunks, line_count if 'line_count' in locals() else 0
+
+Function: chunk_markdown_file
+Docstring:
+Chunk a Markdown file into sections based on headers.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the Markdown file to be chunked.
+
+Returns
+-------
+list of dict
+    A list of dictionaries where each dictionary represents a chunk with a header and its associated content.
+
+Notes
+-----
+Each chunk contains the following keys:
+- 'header': The header text (e.g., '# Title').
+- 'content': The content under the header.
+Code:
+def chunk_markdown_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a Markdown file into sections based on headers.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the Markdown file to be chunked.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionaries where each dictionary represents a chunk with a header and its associated content.
+
+        Notes
+        -----
+        Each chunk contains the following keys:
+        - 'header': The header text (e.g., '# Title').
+        - 'content': The content under the header.
+        """
+
+        chunks = []
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            line_count = len(lines)
+    
+            current_chunk = {"header": None, "content": ""}
+            for line in lines:
+                if line.startswith("#"):  # Header
+                    if current_chunk["header"] or current_chunk["content"].strip():
+                        chunks.append(current_chunk)
+                    current_chunk = {"header": line.strip(), "content": ""}
+                else:
+                    current_chunk["content"] += line
+            if current_chunk["header"] or current_chunk["content"].strip():
+                chunks.append(current_chunk)
+        except Exception as e:
+            logger.warning(f"Error chunking Markdown file {file_path}: {e}")
+        return chunks, line_count if 'line_count' in locals() else 0
+
+Function: chunk_file
+Docstring:
+Chunk a file into semantic sections based on its type.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file to be chunked.
+
+Returns
+-------
+tuple[list, int]
+    A tuple containing a list of chunks and the total number of lines in the file.
+
+Notes
+-----
+This method delegates to type-specific chunking methods based on the file extension. 
+For unsupported types, the entire file content is treated as a single chunk.
+Code:
+def chunk_file(self, file_path: Path) -> tuple[list, int]:
+        """
+        Chunk a file into semantic sections based on its type.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file to be chunked.
+
+        Returns
+        -------
+        tuple[list, int]
+            A tuple containing a list of chunks and the total number of lines in the file.
+
+        Notes
+        -----
+        This method delegates to type-specific chunking methods based on the file extension. 
+        For unsupported types, the entire file content is treated as a single chunk.
+        """
+        suffix = file_path.suffix
+        if suffix == ".py":
+            return self.chunk_python_file(file_path)
+        elif suffix in [".md", ".markdown"]:
+            return self.chunk_markdown_file(file_path)
+        elif suffix in FILE_TYPE_MAP:
+            return self.chunk_tree_sitter_file(file_path, suffix)
+        # elif suffix == ".sql":
+        #     # Assumes SqlProcessor logic is available or mixed-in [9]
+        #     return self.chunk_sql_file(file_path)
+        # elif suffix == ".tmdl":
+        #     # Assumes PBIProcessor logic is available or mixed-in [10]
+        #     return self.chunk_tmdl_file(file_path)
+        # elif suffix in ['.xlsx', '.xlsm']:
+        #     # Delegate to the ExcelProcessor logic
+        #     # If using mixins: return self.chunk_excel_file(file_path)
+        #     # If using composition:
+        #     return ExcelProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
+        else:
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                line_count = content.count('\n') + 1
+                return ([{
+                    "type": "file",
+                    "name": file_path.name,
+                    "content": content
+                }], line_count)
+            except Exception as e:
+                logger.warning(f"Error reading file {file_path}: {e}")
+                return [], 0
+
+Function: chunk_tree_sitter_file
+Docstring:
+Chunk a file using tree-sitter for supported languages.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file to be chunked.
+suffix : str
+    The file suffix (extension) to determine the language.
+
+Returns
+-------
+list of dict
+    A list of dictionaries, each representing a semantic chunk with keys like 'type', 'name', and 'code' or 'content'.
+
+Notes
+-----
+Supports semantic extraction for JavaScript/TypeScript (functions, classes, arrow functions), Java (methods, classes), C/C++ (functions, structs), HTML (scripts, styles), and CSS (rules). Fall[...]
+Code:
+def chunk_tree_sitter_file(self, file_path: Path, suffix: str) -> tuple[list, int]:
+        """
+        Chunk a file using tree-sitter for supported languages.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file to be chunked.
+        suffix : str
+            The file suffix (extension) to determine the language.
+
+        Returns
+        -------
+        list of dict
+            A list of dictionaries, each representing a semantic chunk with keys like 'type', 'name', and 'code' or 'content'.
+
+        Notes
+        -----
+        Supports semantic extraction for JavaScript/TypeScript (functions, classes, arrow functions), Java (methods, classes), C/C++ (functions, structs), HTML (scripts, styles), and CSS (rules). Fall[...]
+        """
+        try:
+            source = file_path.read_text(encoding="utf-8")
+            line_count = source.count('\n') + 1
+            lang_name = FILE_TYPE_MAP[suffix]
+
+            chunks = []
+            if lang_name == "html":
+                # Simple regex fallback for tags
+                import re
+                scripts = re.findall(r'<script[^>]*>(.*?)</script>', source, re.DOTALL | re.IGNORECASE)
+                for script in scripts:
+                    chunks.append({"type": "html_script", "content": script.strip()})
+                styles = re.findall(r'<style[^>]*>(.*?)</style>', source, re.DOTALL | re.IGNORECASE)
+                for style in styles:
+                    chunks.append({"type": "html_style", "content": style.strip()})
+                if not chunks:
+                    chunks = [{"type": "html", "content": source}]
+
+            # CSS: Chunk by rules
+            elif lang_name == "css":
+                import re
+                rules = re.split(r'([@][^{]+{[^}]*}|{[^{}]*})', source)
+                for rule in rules:
+                    if rule.strip() and '{' in rule:
+                        chunks.append({"type": "css_rule", "content": rule.strip()})
+                if not chunks:
+                    chunks = [{"type": "css", "content": source}]
+
+            if not chunks:
+                chunks = [{"type": "file", "name": file_path.name, "content": source}]
+
+            return chunks, line_count
+        except Exception as e:
+            logger.warning(f"Error chunking {suffix} file {file_path}: {e}")
+            content = file_path.read_text(encoding="utf-8")
+            return [{"type": "file", "name": file_path.name, "content": content}], content.count('\n') + 1
+
+Function: __init__
+Code:
+def __init__(self, repo_path: Path, output_dir: Path, max_words: int = 200000, max_file_size: int = 10 * 1024 * 1024, skip_patterns: list = None, skip_dirs: list = None, processor_class=FileProcessor):
+        self.repo_path = repo_path.resolve()
+        self.output_dir = output_dir.resolve()
+        self.max_words = max_words
+        self.max_file_size = max_file_size
+        self.skip_patterns = skip_patterns or [".git"]
+        self.skip_dirs = skip_dirs or ["node_modules", "__pycache__"]
+        self.ignore_patterns = self.load_ignore_patterns()
+        self.word_counts = defaultdict(int)
+        self.content_buffers = defaultdict(str)
+        self.hashes = load_json(self.output_dir / "hashes.json", "hashes")
+        self.file_counter = defaultdict(int)
+        self.metadata = {
+            "processed_files": [],
+            "skipped_files": [],
+            "summary": {"total_files_processed": 0, "total_words": 0}
+        }
+        self.file_processor = processor_class(self.repo_path, self.output_dir)
+
+        validate_directory(self.output_dir)
+
+Function: load_ignore_patterns
+Docstring:
+Load patterns from .gitignore and .dockerignore files if they exist.
+
+Returns
+-------
+pathspec.PathSpec
+    A compiled PathSpec object containing all ignore patterns.
+
+Notes
+-----
+Additional patterns provided via `skip_patterns` are also included. 
+If the ignore files are missing, only the additional patterns are used.
+Code:
+def load_ignore_patterns(self) -> pathspec.PathSpec:
+        """
+        Load patterns from .gitignore and .dockerignore files if they exist.
+
+        Returns
+        -------
+        pathspec.PathSpec
+            A compiled PathSpec object containing all ignore patterns.
+
+        Notes
+        -----
+        Additional patterns provided via `skip_patterns` are also included. 
+        If the ignore files are missing, only the additional patterns are used.
+        """
+
+        ignore_patterns = []
+
+        for ignore_file in [".gitignore", ".dockerignore"]:
+            file_path = self.repo_path / ignore_file
+            if file_path.exists():
+                logger.info(f"Loading ignore patterns from {ignore_file}")
+                with open(file_path, "r", encoding="utf-8") as f:
+                    ignore_patterns.extend(f.readlines())
+
+        # Add additional skip_patterns
+        ignore_patterns.extend(self.skip_patterns)
+
+        # Add skip_dirs to ignore patterns to handle recursion
+        for skip_dir in self.skip_dirs:
+            ignore_patterns.append(f"{skip_dir}/")
+
+        # Compile patterns using pathspec
+        return pathspec.PathSpec.from_lines("gitwildmatch", ignore_patterns)
+
+Function: should_skip
+Docstring:
+Determine if a file or directory should be skipped based on patterns.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file or directory to check.
+
+Returns
+-------
+bool
+    True if the file or directory should be skipped, otherwise False.
+
+Notes
+-----
+This method checks against ignore patterns and explicit directory or file size limits.
+Code:
+def should_skip(self, file_path: Path) -> bool:
+        """
+        Determine if a file or directory should be skipped based on patterns.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file or directory to check.
+
+        Returns
+        -------
+        bool
+            True if the file or directory should be skipped, otherwise False.
+
+        Notes
+        -----
+        This method checks against ignore patterns and explicit directory or file size limits.
+        """
+
+        # Check if the path matches .gitignore or .dockerignore patterns
+        relative_path = file_path.relative_to(self.repo_path)
+        if self.ignore_patterns.match_file(str(relative_path)):
+            logger.info(f"Skipping {relative_path} due to ignore pattern.")
+            return True
+
+        # Skip directories explicitly listed
+        if file_path.is_dir() and file_path.name in self.skip_dirs:
+            logger.info(f"Skipped directory: {file_path}")
+            return True
+
+        # Skip large files
+        if file_path.is_file() and file_path.stat().st_size > self.max_file_size:
+            self.metadata["skipped_files"].append({
+                "path": str(file_path),
+                "reason": "File exceeds size limit"
+            })
+            logger.info(f"Skipped file due to size: {file_path}")
+            return True
+
+        return False
+
+Function: save_chunk
+Docstring:
+Save a chunk of content to a text file.
+
+Parameters
+----------
+chunk : dict
+    The chunk of content to save.
+subdir : pathlib.Path
+    The subdirectory where the chunk should be saved.
+Code:
+def save_chunk(self, chunk: dict, subdir: Path):
+        """
+        Save a chunk of content to a text file.
+
+        Parameters
+        ----------
+        chunk : dict
+            The chunk of content to save.
+        subdir : pathlib.Path
+            The subdirectory where the chunk should be saved.
+        """
+        formatted = self.file_processor.format_chunk(chunk)
+        # Defensive: ensure formatted is a string
+        if not isinstance(formatted, str):
+            logger.warning(f"format_chunk returned non-str for chunk (type: {type(chunk)}); coercing to str.")
+            formatted = str(formatted)
+
+        chunk_word_count = len(formatted.split())
+        subdir_key = str(subdir)  # Ensure key is string
+        if self.word_counts[subdir_key] + chunk_word_count > self.max_words:
+            self.save_content(subdir)
+        self.content_buffers[subdir_key] += formatted + "\n\n"
+        self.word_counts[subdir_key] += chunk_word_count
+
+Function: save_content
+Docstring:
+Save the accumulated content to a file.
+
+This method writes the currently accumulated content to a file in the specified subdirectory.
+After saving, the content and word count are reset for the next chunk.
+
+Parameters
+----------
+subdir : pathlib.Path
+    The subdirectory within the output directory where the chunk file should be saved.
+
+Notes
+-----
+- The file is named `chunk_<counter>.json`, where `<counter>` is an incrementing number for the subdirectory.
+- If the subdirectory does not exist, it is created automatically.
+- Once the content is saved, the internal buffer (`self.content`) and the current word count (`self.current_word_count`) are reset to prepare for the next chunk.
+
+Examples
+--------
+To save the current content to a subdirectory:
+    >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+    >>> processor.content = "This is some chunked content."
+    >>> processor.current_word_count = 5
+    >>> processor.save_content(Path("python"))
+
+Raises
+------
+OSError
+    If the file cannot be created or written, an error is logged.
+Code:
+def save_content(self, subdir: Path):
+        """
+        Save the accumulated content to a file.
+
+        This method writes the currently accumulated content to a file in the specified subdirectory.
+        After saving, the content and word count are reset for the next chunk.
+
+        Parameters
+        ----------
+        subdir : pathlib.Path
+            The subdirectory within the output directory where the chunk file should be saved.
+
+        Notes
+        -----
+        - The file is named `chunk_<counter>.json`, where `<counter>` is an incrementing number for the subdirectory.
+        - If the subdirectory does not exist, it is created automatically.
+        - Once the content is saved, the internal buffer (`self.content`) and the current word count (`self.current_word_count`) are reset to prepare for the next chunk.
+
+        Examples
+        --------
+        To save the current content to a subdirectory:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.content = "This is some chunked content."
+            >>> processor.current_word_count = 5
+            >>> processor.save_content(Path("python"))
+
+        Raises
+        ------
+        OSError
+            If the file cannot be created or written, an error is logged.
+        """
+
+        
+        subdir_key = str(subdir)
+        content = self.content_buffers.get(subdir_key, "")
+        if content:
+            file_path = self.output_dir / subdir / f"chunk_{self.file_counter[subdir]}.txt"
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"Saved chunk to {file_path}")
+            self.file_counter[subdir] += 1
+            self.content_buffers[subdir_key] = ""
+            self.word_counts[subdir_key] = 0
+
+Function: process_file
+Docstring:
+Process a single file.
+
+This method handles the processing of a single file by checking its hash for changes, chunking its content, and saving the resulting chunks.
+Metadata about the processed file is updated, and any errors are logged.
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file to be processed.
+
+Notes
+-----
+- Files that have unchanged hashes (compared to the cached hashes) are skipped.
+- Skipped files are logged in the `metadata['skipped_files']` list with reasons for skipping.
+- Processed files are chunked based on their type, and each chunk is saved to the appropriate subdirectory.
+- Metadata about processed files, such as the number of chunks, file size, number of lines, and total words, is recorded.
+
+Raises
+------
+Exception
+    Any errors encountered during file processing are logged and added to the skipped files list, but do not halt execution.
+
+Examples
+--------
+To process a file:
+    >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+    >>> processor.process_file(Path("repo/example.py"))
+Code:
+def process_file(self, file_path: Path):
+        """
+        Process a single file.
+
+        This method handles the processing of a single file by checking its hash for changes, chunking its content, and saving the resulting chunks.
+        Metadata about the processed file is updated, and any errors are logged.
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file to be processed.
+
+        Notes
+        -----
+        - Files that have unchanged hashes (compared to the cached hashes) are skipped.
+        - Skipped files are logged in the `metadata['skipped_files']` list with reasons for skipping.
+        - Processed files are chunked based on their type, and each chunk is saved to the appropriate subdirectory.
+        - Metadata about processed files, such as the number of chunks, file size, number of lines, and total words, is recorded.
+
+        Raises
+        ------
+        Exception
+            Any errors encountered during file processing are logged and added to the skipped files list, but do not halt execution.
+
+        Examples
+        --------
+        To process a file:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.process_file(Path("repo/example.py"))
+        """
+
+        try:
+            current_hash = compute_file_hash(file_path)
+            if not current_hash:
+                self.metadata["skipped_files"].append({"path": str(file_path), "reason": "Error computing file hash"})
+                logger.warning(f"Skipped file due to hash error: {file_path}")
+                return
+
+            relative_path = str(file_path.relative_to(self.repo_path))
+            if relative_path in self.hashes and self.hashes[relative_path] == current_hash:
+                self.metadata["skipped_files"].append({"path": relative_path, "reason": "Unchanged file (hash match)"})
+                logger.info(f"Skipped unchanged file: {file_path}")
+                return
+
+            subdir = self.get_file_type_subdir(file_path)
+            chunks, line_count = self.file_processor.chunk_file(file_path)
+            for chunk in chunks:
+                self.save_chunk(chunk, subdir)
+
+            # compute words safely: format_chunk always returns a string now
+            words_in_chunks = sum(len(self.file_processor.format_chunk(chunk).split()) for chunk in chunks)
+            self.metadata["processed_files"].append({
+                "path": relative_path,
+                "chunks": len(chunks),
+                "size": file_path.stat().st_size,
+                "lines": line_count,
+                "words": words_in_chunks
+            })
+            self.metadata["summary"]["total_files_processed"] += 1
+            self.metadata["summary"]["total_words"] += words_in_chunks
+            self.hashes[relative_path] = current_hash
+        except Exception as e:
+            logger.warning(f"Error processing file {file_path}: {e}")
+            self.metadata["skipped_files"].append({"path": str(file_path), "reason": f"Error processing file: {e}"})
+
+Function: process_repo
+Docstring:
+Process all files in the repository.
+
+This method iterates over all files in the specified repository directory. It skips files and directories 
+based on ignore patterns and file size limits, processes supported file types, and saves the results. 
+Metadata about processed and skipped files is recorded, and the final results are saved to the output directory.
+
+Notes
+-----
+- Files are processed based on their type (e.g., Python files, Markdown files).
+- Skipped files and directories are logged in the `metadata['skipped_files']`.
+- Processed files are chunked, and their metadata is updated in `metadata['processed_files']`.
+- All metadata and hash information is saved to the output directory at the end of processing.
+
+Parameters
+----------
+None
+
+Raises
+------
+Exception
+    Errors during individual file processing are logged and added to the skipped files list, but do not halt execution.
+
+Examples
+--------
+To process a repository:
+    >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+    >>> processor.process_repo()
+
+Metadata Example:
+    After processing, metadata is saved as JSON:
+    {
+        "processed_files": [
+            {
+                "path": "example.py",
+                "chunks": 3,
+                "size": 2048,
+                "lines": 50,
+                "words": 300
+            }
+        ],
+        "skipped_files": [
+            {
+                "path": ".git/config",
+                "reason": "Matches ignore pattern"
+            }
+        ],
+        "summary": {
+            "total_files_processed": 10,
+            "total_words": 5000
+        }
+    }
+Code:
+def process_repo(self):
+        """
+        Process all files in the repository.
+
+        This method iterates over all files in the specified repository directory. It skips files and directories 
+        based on ignore patterns and file size limits, processes supported file types, and saves the results. 
+        Metadata about processed and skipped files is recorded, and the final results are saved to the output directory.
+
+        Notes
+        -----
+        - Files are processed based on their type (e.g., Python files, Markdown files).
+        - Skipped files and directories are logged in the `metadata['skipped_files']`.
+        - Processed files are chunked, and their metadata is updated in `metadata['processed_files']`.
+        - All metadata and hash information is saved to the output directory at the end of processing.
+
+        Parameters
+        ----------
+        None
+
+        Raises
+        ------
+        Exception
+            Errors during individual file processing are logged and added to the skipped files list, but do not halt execution.
+
+        Examples
+        --------
+        To process a repository:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.process_repo()
+
+        Metadata Example:
+            After processing, metadata is saved as JSON:
+            {
+                "processed_files": [
+                    {
+                        "path": "example.py",
+                        "chunks": 3,
+                        "size": 2048,
+                        "lines": 50,
+                        "words": 300
+                    }
+                ],
+                "skipped_files": [
+                    {
+                        "path": ".git/config",
+                        "reason": "Matches ignore pattern"
+                    }
+                ],
+                "summary": {
+                    "total_files_processed": 10,
+                    "total_words": 5000
+                }
+            }
+        """
+
+        logger.info(f"Processing repository: {self.repo_path}")
+        total_files = sum(1 for _ in self.repo_path.rglob("*"))
+        file_count = 0
+
+        for file_path in self.repo_path.rglob("*"):
+            file_count += 1
+            logger.info(f"Processing file {file_count}/{total_files}: {file_path}")
+            if self.should_skip(file_path):
+                continue
+
+            if file_path.is_file():
+                self.process_file(file_path)
+
+        save_json(self.metadata, self.output_dir / "metadata.json", "Metadata")
+        save_json(self.hashes, self.output_dir / "hashes.json", "Hashes")
+
+        # Flush all remaining buffers
+        for subdir_key in list(self.content_buffers.keys()):
+            if self.content_buffers[subdir_key]:
+                self.save_content(Path(subdir_key))
+
+        logger.info("Repository processing complete.")
+
+Function: get_file_type_subdir
+Docstring:
+Determine the subdirectory for a file based on its type.
+
+This method maps a file's extension to a predefined subdirectory name using the `FILE_TYPE_MAP` dictionary.
+If the file extension is not recognized, it defaults to "other".
+
+Parameters
+----------
+file_path : pathlib.Path
+    The path to the file whose subdirectory is being determined.
+
+Returns
+-------
+str
+    The name of the subdirectory where the file should be categorized.
+    For example, "python" for `.py` files, "markdown" for `.md` files, and "other" for unrecognized file types.
+
+Notes
+-----
+- The `FILE_TYPE_MAP` dictionary defines the mappings between file extensions and subdirectory names.
+- This method ensures that files are categorized consistently based on their type.
+
+Examples
+--------
+To get the subdirectory for a file:
+    >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+    >>> processor.get_file_type_subdir(Path("example.py"))
+    'python'
+
+    >>> processor.get_file_type_subdir(Path("README.md"))
+    'markdown'
+
+    >>> processor.get_file_type_subdir(Path("unknown.xyz"))
+    'other'
+Code:
+def get_file_type_subdir(self, file_path: Path) -> str:
+        """
+        Determine the subdirectory for a file based on its type.
+
+        This method maps a file's extension to a predefined subdirectory name using the `FILE_TYPE_MAP` dictionary.
+        If the file extension is not recognized, it defaults to "other".
+
+        Parameters
+        ----------
+        file_path : pathlib.Path
+            The path to the file whose subdirectory is being determined.
+
+        Returns
+        -------
+        str
+            The name of the subdirectory where the file should be categorized.
+            For example, "python" for `.py` files, "markdown" for `.md` files, and "other" for unrecognized file types.
+
+        Notes
+        -----
+        - The `FILE_TYPE_MAP` dictionary defines the mappings between file extensions and subdirectory names.
+        - This method ensures that files are categorized consistently based on their type.
+
+        Examples
+        --------
+        To get the subdirectory for a file:
+            >>> processor = RepoContentProcessor(repo_path=Path("repo"), output_dir=Path("output"))
+            >>> processor.get_file_type_subdir(Path("example.py"))
+            'python'
+
+            >>> processor.get_file_type_subdir(Path("README.md"))
+            'markdown'
+
+            >>> processor.get_file_type_subdir(Path("unknown.xyz"))
+            'other'
+        """
+
+        return FILE_TYPE_MAP.get(file_path.suffix, "other")
+
+Comments:
+Line 12: Configure logging
+Line 206: join list of strings or list of objects coerced to strings
+Line 224: Defensive: if chunk is not a dict, coerce and return
+Line 244: content may be a list of dicts or strings
+Line 269: Unknown chunk: turn it into a string representation
+Line 304: Extract functions and classes using AST
+Line 334: Extract inline comments using tokenize
+Line 382: Header
+Line 420: elif suffix == ".sql":
+Line 421: # Assumes SqlProcessor logic is available or mixed-in [9]
+Line 422: return self.chunk_sql_file(file_path)
+Line 423: elif suffix == ".tmdl":
+Line 424: # Assumes PBIProcessor logic is available or mixed-in [10]
+Line 425: return self.chunk_tmdl_file(file_path)
+Line 426: elif suffix in ['.xlsx', '.xlsm']:
+Line 427: # Delegate to the ExcelProcessor logic
+Line 428: # If using mixins: return self.chunk_excel_file(file_path)
+Line 429: # If using composition:
+Line 430: return ExcelProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
+Line 472: Simple regex fallback for tags
+Line 483: CSS: Chunk by rules
+Line 598: Add additional skip_patterns
+Line 601: Add skip_dirs to ignore patterns to handle recursion
+Line 605: Compile patterns using pathspec
+Line 627: Check if the path matches .gitignore or .dockerignore patterns
+Line 633: Skip directories explicitly listed
+Line 638: Skip large files
+Line 661: Defensive: ensure formatted is a string
+Line 667: Ensure key is string
+Line 768: compute words safely: format_chunk always returns a string now
+Line 855: Flush all remaining buffers
+
