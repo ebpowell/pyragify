@@ -3,11 +3,19 @@ import os
 from pathlib import Path
 import csv
 import logging
-
-# Add src to sys.path
-sys.path.append(str(Path(__file__).resolve().parent.parent / "src/pyragify"))
 import psycopg2
 from contextlib import contextmanager
+
+## 1. Get the path to the 'applications' folder (where this script is)
+current_dir = Path(__file__).resolve().parent
+
+# 2. Go up one level to the Project Root, then into 'src'
+#    Structure: applications/ -> (up) -> Root -> (down) -> src
+src_path = current_dir.parent / "src/pyragify"
+
+# 3. Add this path to sys.path so Python looks there for modules
+sys.path.append(str(src_path))
+
 from tabular_tokenizer import TabularDataTokenizer
 
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +65,10 @@ def main(output_dir, connect_string, table_name):
 
 if __name__ == "__main__":
     connect_string= "dbname=itsd_analysis user=ebpowell password=Geo!ogy_26$ host=localhost port=5432"
-    table_name = 'raw_data.v_itsd_positions'
+    table_names  = ['raw_data.v_exp_itsd_positions', 
+                    'raw_data.v_exp_roles_within_itsd_capacity_planning', 
+                    'raw_data.v_exp_ornl_band_template_tech_prof']
+    # table_name = 'raw_data.v_itsd_positions'
     output_dir = '/home/ebpowell/ITSD'
-    main(output_dir, connect_string, table_name)
+    for table_name in table_names:
+        main(output_dir, connect_string, table_name)
