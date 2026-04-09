@@ -15,10 +15,10 @@ from processor import RepoContentProcessor, FileProcessor
 
 if __name__ == "__main__":
     repo_folder = '/mnt/c/Users/uvp/'
-    #repo_folder = '/home/ebpowell/ABWC/'
-    repo_name = 'ITSD/'
+    # repo_folder = '/home/ebpowell/GITLAB/ai_bi_code//'
+    repo_name = 'TradeOutreach/'
     repo_path = Path(repo_folder + repo_name)
-    output_dir = Path(repo_folder + '/output')
+    output_dir = Path(repo_folder + '/output/'+repo_name)
     hashes_file = output_dir / "hashes.json"
     if hashes_file.exists():
         hashes_file.unlink()
