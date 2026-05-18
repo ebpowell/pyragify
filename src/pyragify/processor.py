@@ -601,6 +601,8 @@ class RepoContentProcessor:
         self.ignore_patterns = self.load_ignore_patterns()
         self.word_counts = defaultdict(int)
         self.content_buffers = defaultdict(str)
+        self.file_counter = defaultdict(int)
+        self._initialized_subdirs = set()
         self.hashes = load_json(self.output_dir / "hashes.json", "hashes")
         self.metadata = {
             "processed_files": [],
@@ -687,6 +689,49 @@ class RepoContentProcessor:
 
         return False
 
+    def _init_subdir_state(self, subdir: str):
+        if subdir in self._initialized_subdirs:
+            return
+            
+        self._initialized_subdirs.add(subdir)
+        subdir_path = self.output_dir / subdir
+        if not subdir_path.exists():
+            self.file_counter[subdir] = 0
+            self.word_counts[subdir] = 0
+            return
+            
+        pattern = f"{subdir}_chunk_{self.run_date}_*.txt"
+        existing_files = list(subdir_path.glob(pattern))
+        
+        if not existing_files:
+            self.file_counter[subdir] = 0
+            self.word_counts[subdir] = 0
+            return
+            
+        highest_index = 0
+        latest_file = None
+        for f in existing_files:
+            try:
+                idx_str = f.stem.split('_')[-1]
+                idx = int(idx_str)
+                if idx >= highest_index:
+                    highest_index = idx
+                    latest_file = f
+            except ValueError:
+                continue
+                
+        self.file_counter[subdir] = highest_index
+        if latest_file and latest_file.exists():
+            try:
+                with open(latest_file, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    self.word_counts[subdir] = len(content.split())
+            except Exception as e:
+                logger.warning(f"Failed to read existing file {latest_file}: {e}")
+                self.word_counts[subdir] = 0
+        else:
+            self.word_counts[subdir] = 0
+
     def save_chunk(self, chunk: dict, subdir: Path):
         """
         Save a chunk of content to a text file.
@@ -706,8 +751,15 @@ class RepoContentProcessor:
 
         chunk_word_count = len(formatted.split())
         subdir_key = str(subdir)  # Ensure key is string
+        self._init_subdir_state(subdir_key)
+        
         if self.word_counts[subdir_key] + chunk_word_count > self.max_words:
-            self.save_content(subdir)
+            if self.content_buffers[subdir_key]:
+                self.save_content(subdir)
+            if self.word_counts[subdir_key] > 0:
+                self.file_counter[subdir_key] += 1
+                self.word_counts[subdir_key] = 0
+                
         self.content_buffers[subdir_key] += formatted + "\n\n"
         self.word_counts[subdir_key] += chunk_word_count
 
@@ -726,10 +778,10 @@ class RepoContentProcessor:
 
         Notes
         -----
-        - The file is named `<subdir>_chunk_<run_date>.txt`.
+        - The file is named `<subdir>_chunk_<run_date>_<counter>.txt`.
         - Content is appended to the file to preserve all records.
         - If the subdirectory does not exist, it is created automatically.
-        - Once the content is saved, the internal buffer (`self.content`) and the current word count (`self.current_word_count`) are reset to prepare for the next chunk.
+        - Once the content is saved, the internal buffer (`self.content`) is reset to prepare for the next chunk.
 
         Examples
         --------
@@ -749,13 +801,12 @@ class RepoContentProcessor:
         subdir_key = str(subdir)
         content = self.content_buffers.get(subdir_key, "")
         if content:
-            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.run_date}.txt"
+            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.run_date}_{self.file_counter[subdir_key]}.txt"
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "a", encoding="utf-8") as f:
                 f.write(content)
             logger.info(f"Saved chunk to {file_path}")
             self.content_buffers[subdir_key] = ""
-            self.word_counts[subdir_key] = 0
             
     def process_file(self, file_path: Path):
         """
