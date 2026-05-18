@@ -10,7 +10,7 @@ src_path = current_dir.parent / "src/pyragify"
 
 # 3. Add this path to sys.path so Python looks there for modules
 sys.path.append(str(src_path))
-
+# import cli:app
 from processor import RepoContentProcessor, FileProcessor
 
 if __name__ == "__main__":
@@ -30,3 +30,4 @@ if __name__ == "__main__":
     processor = RepoContentProcessor(repo_path, output_dir, skip_patterns=skip_patterns, skip_dirs=skip_folders,
                                      processor_class=FileProcessor)
     processor.process_repo()
+    # cli:app()

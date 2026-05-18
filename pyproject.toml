@@ -1,7 +1,7 @@
 [project]
 name = "pyragify"
 version = "0.2.0"
-description = "A tool for processing code repositories into semantic chunks for analysis with LLMs, especiallyNotebookLM."
+description = "A tool for processing code repositories, files, and tables, into semantic chunks for analysis with LLMs, especiallyNotebookLM."
 readme = "README.md"
 requires-python = ">=3.9, <3.13"
 authors = [
@@ -21,7 +21,10 @@ dependencies = [
     "pyyaml>=6.0.2",
     "typer>=0.15.1",
     "sqlparse>=0.5.0",
-    "sentence-transformers>=2.2.0"
+    "sentence-transformers>=2.2.0",
+    "openpyxl>=3.1.5",
+    "transformers>=5.5.0",
+    "triton"
 ]
 
 [project.optional-dependencies]
@@ -31,8 +34,8 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/ThomasBury/pyragify"
-repository = "https://github.com/ThomasBury/pyragify"
+homepage = "https://github.com/ebpowell/pyragify"
+repository = "https://github.com/ebpowell/pyragify"
 
 [project.scripts]
 pyragify = "pyragify.cli:app"

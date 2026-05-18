@@ -2,7 +2,7 @@ import typer
 import logging
 from pathlib import Path
 from omegaconf import OmegaConf
-from processor import RepoContentProcessor
+from processor import RepoContentProcessor, FileProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -117,7 +117,8 @@ def process_repo(
             max_words=config.max_words,
             max_file_size=config.max_file_size,
             skip_patterns=config.skip_patterns,
-            skip_dirs=config.skip_dirs
+            skip_dirs=config.skip_dirs,
+  	    processor_class=FileProcessor
         )
         processor.process_repo()
         logger.info("Repository processing completed successfully!")
