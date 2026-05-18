@@ -602,7 +602,6 @@ class RepoContentProcessor:
         self.word_counts = defaultdict(int)
         self.content_buffers = defaultdict(str)
         self.hashes = load_json(self.output_dir / "hashes.json", "hashes")
-        self.file_counter = defaultdict(int)
         self.metadata = {
             "processed_files": [],
             "skipped_files": [],
@@ -727,7 +726,8 @@ class RepoContentProcessor:
 
         Notes
         -----
-        - The file is named `chunk_<counter>.json`, where `<counter>` is an incrementing number for the subdirectory.
+        - The file is named `<subdir>_chunk_<run_date>.txt`.
+        - Content is appended to the file to preserve all records.
         - If the subdirectory does not exist, it is created automatically.
         - Once the content is saved, the internal buffer (`self.content`) and the current word count (`self.current_word_count`) are reset to prepare for the next chunk.
 
@@ -749,12 +749,11 @@ class RepoContentProcessor:
         subdir_key = str(subdir)
         content = self.content_buffers.get(subdir_key, "")
         if content:
-            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.run_date}_{self.file_counter[subdir]}.txt"
+            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.run_date}.txt"
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(file_path, "w", encoding="utf-8") as f:
+            with open(file_path, "a", encoding="utf-8") as f:
                 f.write(content)
             logger.info(f"Saved chunk to {file_path}")
-            self.file_counter[subdir] += 1
             self.content_buffers[subdir_key] = ""
             self.word_counts[subdir_key] = 0
             
