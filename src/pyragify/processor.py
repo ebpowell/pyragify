@@ -7,6 +7,7 @@ import logging
 from io import StringIO
 from pathlib import Path
 from collections import defaultdict
+from datetime import datetime
 from utils import validate_directory
 
 # Configure logging
@@ -608,6 +609,7 @@ class RepoContentProcessor:
             "summary": {"total_files_processed": 0, "total_words": 0}
         }
         self.file_processor = processor_class(self.repo_path, self.output_dir)
+        self.run_date = datetime.now().strftime("%Y%m%d")
 
         validate_directory(self.output_dir)
 
@@ -747,7 +749,7 @@ class RepoContentProcessor:
         subdir_key = str(subdir)
         content = self.content_buffers.get(subdir_key, "")
         if content:
-            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.file_counter[subdir]}.txt"
+            file_path = self.output_dir / subdir / f"{subdir}_chunk_{self.run_date}_{self.file_counter[subdir]}.txt"
             file_path.parent.mkdir(parents=True, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
