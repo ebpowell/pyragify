@@ -26,10 +26,16 @@ class PBIProcessor(FileProcessor):
         Chunk a TMDL file into semantic sections (tables, columns, measures, etc.).
         Produces a single Markdown chunk per file.
         """
+        project_name = self.repo_path.name
+        for part in file_path.parts:
+            if part.endswith(".Dataset") or part.endswith(".SemanticModel") or part.endswith(".pbip") or part.endswith(".Report"):
+                project_name = part.replace(".Dataset", "").replace(".SemanticModel", "").replace(".pbip", "").replace(".Report", "")
+                break
+                
         if file_path.name == "model.tmdl":
-            return self.chunk_model_tmdl(file_path)
+            return self.chunk_model_tmdl(file_path, project_name)
         elif file_path.name == "relationships.tmdl":
-            return self.vectorize_relationships(file_path)
+            return self.vectorize_relationships(file_path, project_name)
         # Skip the LocalDateTables
         elif "LocalDateTable" in file_path.name:
             return None
@@ -58,7 +64,7 @@ class PBIProcessor(FileProcessor):
             if "LocalDateTable" in name or "DateTableTemplate" in name:
                 return [], line_count
 
-            markdown_output = f"### Table: {name}\n"
+            markdown_output = f"### Project: {project_name}\n### Table: {name}\n"
 
             # Regex to capture Column name, Type, and its indented body
             # Logic Breakdown:
@@ -158,7 +164,7 @@ class PBIProcessor(FileProcessor):
             logger.warning(f"Error chunking TMDL file {file_path}: {e}")
             return [], 0
             
-    def chunk_model_tmdl(self, file_path: Path) -> tuple[list, int]:
+    def chunk_model_tmdl(self, file_path: Path, project_name: str = "") -> tuple[list, int]:
         """
         Parse model.tmdl to extract table references and return an index chunk.
         """
@@ -176,17 +182,18 @@ class PBIProcessor(FileProcessor):
                     if len(parts) >= 3:
                         tables.append(parts[2])
             
+            project_info = f"Project: {project_name}\n" if project_name else ""
             chunk = {
                 "type": "model_index",
-                "name": "Model Index",
-                "content": "Tables found in model:\n" + "\n".join(f"- {t}" for t in tables)
+                "name": f"Model Index - {project_name}" if project_name else "Model Index",
+                "content": f"{project_info}Tables found in model:\n" + "\n".join(f"- {t}" for t in tables)
             }
             return [chunk], line_count
         except Exception as e:
             logger.warning(f"Error processing model.tmdl {file_path}: {e}")
             return [], 0
 
-    def vectorize_relationships(self, file_path: Path) -> tuple[list, int]:
+    def vectorize_relationships(self, file_path: Path, project_name: str = "") -> tuple[list, int]:
         """
         Transforms raw relationship logs into semantic vectors
         by flattening the structure into human-readable sentences.
@@ -214,7 +221,10 @@ class PBIProcessor(FileProcessor):
             except:
                 model = None
 
-            markdown_output = "## 1. Global Relationship Map\n"
+            project_info = f" ({project_name})" if project_name else ""
+            markdown_output = f"## 1. Global Relationship Map{project_info}\n"
+            if project_name:
+                markdown_output += f"**Project:** {project_name}\n\n"
             
             # 1. Parse raw relationships
             # Structure: relationship <Id> \n fromColumn: <table>[<Col>] \n toColumn: <table>[<Col>] ...
