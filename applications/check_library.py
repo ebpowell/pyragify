@@ -10,13 +10,13 @@ src_path = current_dir.parent / "src/pyragify"
 
 # 3. Add this path to sys.path so Python looks there for modules
 sys.path.append(str(src_path))
-
+# import cli:app
 from processor import RepoContentProcessor, FileProcessor
 
 if __name__ == "__main__":
-    repo_folder = '/mnt/c/Users/uvp/'
-    # repo_folder = '/home/ebpowell/GITLAB/ai_bi_code//'
-    repo_name = 'TradeOutreach/'
+    # repo_folder = '/mnt/c/Users/uvp/'
+    repo_folder = '/home/ebpowell/GIT_REPO/'
+    repo_name = 'TradeOutreach'
     repo_path = Path(repo_folder + repo_name)
     output_dir = Path(repo_folder + '/output/'+repo_name)
     hashes_file = output_dir / "hashes.json"
@@ -28,3 +28,4 @@ if __name__ == "__main__":
     processor = RepoContentProcessor(repo_path, output_dir, skip_patterns=skip_patterns, skip_dirs=skip_folders,
                                      processor_class=FileProcessor)
     processor.process_repo()
+    # cli:app()
