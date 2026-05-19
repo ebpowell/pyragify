@@ -27,11 +27,20 @@ class PBIProcessor(FileProcessor):
         Produces a single Markdown chunk per file.
         """
         project_name = self.repo_path.name
+        found_ext = False
         for part in file_path.parts:
             if part.endswith(".Dataset") or part.endswith(".SemanticModel") or part.endswith(".pbip") or part.endswith(".Report"):
                 project_name = part.replace(".Dataset", "").replace(".SemanticModel", "").replace(".pbip", "").replace(".Report", "")
+                found_ext = True
                 break
                 
+        if not found_ext:
+            parts = file_path.parts
+            for i, part in enumerate(parts):
+                if part.lower() in ("model", "report", "definition", "dataset") and i > 0:
+                    project_name = parts[i-1]
+                    break
+                    
         if file_path.name == "model.tmdl":
             return self.chunk_model_tmdl(file_path, project_name)
         elif file_path.name == "relationships.tmdl":
