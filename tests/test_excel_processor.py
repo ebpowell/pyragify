@@ -38,11 +38,12 @@ def test_extract_connections_success(mock_excel_file):
             
             connections = processor._extract_connections(mock_excel_file)
             
-            assert len(connections) == 1
-            assert connections[0]["name"] == "TestConn"
-            assert connections[0]["type"] == "Database/SQL"
-            assert connections[0]["connection_string"] == "Provider=SQLOLEDB;Data Source=Server;"
-            assert connections[0]["command_text"] == "SELECT * FROM Table"
+            assert isinstance(connections, str)
+            assert "TestConn" in connections
+            assert "Database/SQL" in connections
+            assert "Provider=SQLOLEDB" in connections
+            assert "SELECT * FROM Table" in connections
+
 
 def test_extract_connections_no_file(mock_excel_file):
     processor = ExcelProcessor(Path("."), Path("."))
