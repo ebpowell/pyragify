@@ -52,6 +52,9 @@ class SqlProcessor(FileProcessor):
                 match = re.match(r'^(\w+)', statement)
                 if match:
                     stmt_type = match.group(1).upper()
+                else:
+                    if statement[0:2] == '--' or statement[0:2] == '/*':
+                        stmt_type = 'Comment'
                 
                 # Try to extract a name if CREATE/ALTER/DROP
                 name = "Unknown"
