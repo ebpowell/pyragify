@@ -64,43 +64,13 @@ class TestPbiProcessor:
         chunks, line_count = processor.chunk_tmdl_file(sample_tmdl_file)
         
         assert line_count > 0
-        # Expected chunks:
-        # 1. table Date
-        # 2. column Date
-        # 3. table Sales
-        # 4. measure 'Total Sales'
-        # 5. partition Partition1
-        # 6. annotation PBI_ResultType
-        assert len(chunks) == 6
+        assert len(chunks) == 1
+        assert chunks[0]["type"] == "tmdl_table_summary"
         
-        types = [c["type"] for c in chunks]
-        assert "table" in types
-        assert "column" in types
-        assert "measure" in types
-        assert "partition" in types
-        assert "annotation" in types
-        
-        # Verify specific content containment
-        col_chunk = next(c for c in chunks if c["type"] == "column")
-        assert col_chunk["name"] == "Date"
-        assert "dataType: dateTime" in col_chunk["content"]
-        
-        measure_chunk = next(c for c in chunks if c["type"] == "measure")
-        assert measure_chunk["name"] == "'Total Sales'"
-        assert "formatString" in measure_chunk["content"]
+        content = chunks[0]["content"]
+        assert "Table: tables" in content
+        assert "Date" in content
 
-        partition_chunk = next(c for c in chunks if c["type"] == "partition")
-        assert partition_chunk["name"] == "Partition1"
-        assert "mode: import" in partition_chunk["content"]
-        
-        # Verify parent association
-        assert col_chunk["parent"] == "Date"
-        assert measure_chunk["parent"] == "Sales"
-        assert partition_chunk["parent"] == "Sales"
-        
-        # Annotation defined inside Sales table
-        annotation_chunk = next(c for c in chunks if c["type"] == "annotation")
-        assert annotation_chunk["parent"] == "Sales"
 
     def test_format_chunk_parent(self, tmp_path):
         """Test formatting with parent table."""
@@ -123,7 +93,7 @@ class TestPbiProcessor:
         
         # Test .tmdl
         tmdl_chunks, _ = processor.chunk_file(sample_tmdl_file)
-        assert tmdl_chunks[0]["type"] == "table"
+        assert tmdl_chunks[0]["type"] == "tmdl_table_summary"
         
         # Test .py delegation to super()
         # chunk_python_file from FileProcessor produces 'file' chunk for simple script or 'function'/'class'

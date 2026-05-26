@@ -3,7 +3,7 @@ name = "pyragify"
 version = "0.2.0"
 description = "A tool for processing code repositories, files, and tables, into semantic chunks for analysis with LLMs, especiallyNotebookLM."
 readme = "README.md"
-requires-python = ">=3.9, <3.13"
+requires-python = ">=3.10, <3.13"
 authors = [
     {name = "ThomasBury"},
     {name = "ebpowell"}
@@ -23,7 +23,7 @@ dependencies = [
     "sqlparse>=0.5.0",
     "sentence-transformers>=2.2.0",
     "openpyxl>=3.1.5",
-    "transformers>=5.5.0",
+    "transformers>=4.38.0",
     "triton"
 ]
 
@@ -41,7 +41,7 @@ repository = "https://github.com/ebpowell/pyragify"
 pyragify = "pyragify.cli:app"
 
 [tool.pytest.ini_options]
-python_paths = ["src"]
+pythonpath = ["src", "src/pyragify"]
 
 [build-system]
 requires = ["hatchling"]

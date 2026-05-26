@@ -633,3 +633,6 @@ class PBIProcessor(FileProcessor):
                 truncated_lines.append(line)
 
         return "\n".join(truncated_lines)
+
+# Alias for testing and backwards compatibility
+pbi_processor = PBIProcessor
