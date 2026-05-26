@@ -1,4 +1,5 @@
 import logging
+import hashlib
 import re
 from pathlib import Path
 from processor import FileProcessor
@@ -213,6 +214,9 @@ class SqlProcessor(FileProcessor):
                         })
                     continue
 
+                parent_stmt_hash = hashlib.md5(remaining_sql.encode('utf-8')).hexdigest()[:8]
+                parent_name = None
+
                 stmt_info = {
                     "comment": comment_str if comment_str else None,
                     "sql_create": None,
@@ -231,6 +235,7 @@ class SqlProcessor(FileProcessor):
                     sql_type = ddl_match.group(1).upper()
                     sql_type = re.sub(r'\s+', ' ', sql_type)
                     name = ddl_match.group(2).strip().rstrip(';').replace('`', '').replace('"', '').replace("'", "")
+                    parent_name = name
                     stmt_info["sql_create"] = {
                         "type": "sql_create",
                         "sql_type": sql_type,
@@ -267,6 +272,8 @@ class SqlProcessor(FileProcessor):
                                 "tables": tables,
                                 "content": clause_content.rstrip(';')
                             }
+                            if tables and not parent_name:
+                                parent_name = f"Query on {tables[0]}"
                         elif clause_type == 'JOIN':
                             join_regex = re.compile(
                                 r'^\s*(?:LEFT|RIGHT|INNER|OUTER|CROSS|FULL|NATURAL)?\s*(?:OUTER|INNER)?\s*JOIN\s+(.*?)(?:\s+((?:ON|USING)\s+.*))?$',
@@ -301,27 +308,43 @@ class SqlProcessor(FileProcessor):
                     len(stmt_info["sql_joins"]) > 0
                 )
                 
+                # Default parent_name if still None
+                if not parent_name:
+                    parent_name = "General Statement"
+
                 if stmt_info["comment"]:
                     chunks.append({
                         "type": "sql_comment",
                         "name": "Comment",
+                        "parent_stmt": parent_stmt_hash,
+                        "parent_name": parent_name,
                         "content": stmt_info["comment"]
                     })
                     
                 if has_granular:
                     if stmt_info["sql_create"]:
+                        stmt_info["sql_create"]["parent_stmt"] = parent_stmt_hash
+                        stmt_info["sql_create"]["parent_name"] = parent_name
                         chunks.append(stmt_info["sql_create"])
                     if stmt_info["sql_select"]:
+                        stmt_info["sql_select"]["parent_stmt"] = parent_stmt_hash
+                        stmt_info["sql_select"]["parent_name"] = parent_name
                         chunks.append(stmt_info["sql_select"])
                     if stmt_info["sql_from"]:
+                        stmt_info["sql_from"]["parent_stmt"] = parent_stmt_hash
+                        stmt_info["sql_from"]["parent_name"] = parent_name
                         chunks.append(stmt_info["sql_from"])
                     for join_chunk in stmt_info["sql_joins"]:
+                        join_chunk["parent_stmt"] = parent_stmt_hash
+                        join_chunk["parent_name"] = parent_name
                         chunks.append(join_chunk)
                 else:
                     chunks.append({
                         "type": "sql_statement",
                         "sql_type": "SQL Statement",
                         "name": "Statement",
+                        "parent_stmt": parent_stmt_hash,
+                        "parent_name": parent_name,
                         "content": remaining_sql
                     })
 
@@ -388,25 +411,4 @@ class SqlProcessor(FileProcessor):
         """
         Format a chunk into plain text for saving/vectorizing.
         """
-        chunk_type = chunk.get("type")
-        if chunk_type == "sql_comment":
-            return f"SQL Comment:\n{chunk.get('content')}"
-        elif chunk_type == "sql_create":
-            return f"SQL DDL: {chunk.get('sql_type')} {chunk.get('name')}\nContent:\n{chunk.get('content')}"
-        elif chunk_type == "sql_select":
-            fields = ", ".join(chunk.get("fields", []))
-            return f"SQL SELECT Fields: {fields}\nClause:\n{chunk.get('content')}"
-        elif chunk_type == "sql_from":
-            tables = ", ".join(chunk.get("tables", []))
-            return f"SQL FROM Tables: {tables}\nClause:\n{chunk.get('content')}"
-        elif chunk_type == "sql_join":
-            table = chunk.get("table", "Unknown")
-            condition = chunk.get("condition", "None")
-            return f"SQL JOIN Table: {table}\nCondition: {condition}\nClause:\n{chunk.get('content')}"
-        elif chunk_type == "sql_statement":
-            content = self._ensure_text(chunk.get("content", ""))
-            sql_type = chunk.get("sql_type", "SQL")
-            name = chunk.get("name", "Unknown")
-            return f"{sql_type}: {name}\nContent:\n{content}"
-        
         return super().format_chunk(chunk)

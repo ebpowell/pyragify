@@ -302,10 +302,37 @@ class FileProcessor:
         elif chunk_type == "excel_lineage":
             content = self._ensure_text(chunk.get("content", ""))
             return f"Excel Lineage:\n{content}"
-        elif chunk_type == "sql_statement":
+        elif chunk_type in ("sql_comment", "sql_create", "sql_select", "sql_from", "sql_join", "sql_statement"):
             content = self._ensure_text(chunk.get("content", ""))
-            # f"Class: {chunk.get('name')}{doc_part}\nCode:\n{code}"
-            return f"SQL Statement:{chunk.get('name')}\nType:{chunk.get('sql_type')}\nText:{content}"
+            parent_stmt = chunk.get("parent_stmt")
+            parent_name = chunk.get("parent_name")
+            conn_info = ""
+            if parent_stmt or parent_name:
+                parts = []
+                if parent_name:
+                    parts.append(f"Statement: {parent_name}")
+                if parent_stmt:
+                    parts.append(f"Link ID: {parent_stmt}")
+                conn_info = f" ({', '.join(parts)})"
+            
+            if chunk_type == "sql_comment":
+                return f"SQL Comment{conn_info}:\n{content}"
+            elif chunk_type == "sql_create":
+                return f"SQL DDL: {chunk.get('sql_type')} {chunk.get('name')}{conn_info}\nContent:\n{content}"
+            elif chunk_type == "sql_select":
+                fields = ", ".join(chunk.get("fields", []))
+                return f"SQL SELECT Fields: {fields}{conn_info}\nClause:\n{content}"
+            elif chunk_type == "sql_from":
+                tables = ", ".join(chunk.get("tables", []))
+                return f"SQL FROM Tables: {tables}{conn_info}\nClause:\n{content}"
+            elif chunk_type == "sql_join":
+                table = chunk.get("table", "Unknown")
+                condition = chunk.get("condition", "None")
+                return f"SQL JOIN Table: {table}{conn_info}\nCondition: {condition}\nClause:\n{content}"
+            else:
+                sql_type = chunk.get("sql_type", "SQL")
+                name = chunk.get("name", "Unknown")
+                return f"{sql_type}: {name}{conn_info}\nContent:\n{content}"
         else:
             # Unknown chunk: turn it into a string representation
             return f"Unknown chunk type:\n{self._ensure_text(chunk)}"
