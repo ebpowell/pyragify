@@ -128,6 +128,11 @@ SELECT id FROM users;"""
         assert join_chunk2["table"] == "my_db.deliveries"
         assert join_chunk2["condition"] == "USING (order_id)"
         assert "INNER JOIN" in join_chunk2["content"]
+        
+        # Verify parent statement links and names are consistent
+        assert select_chunk["parent_stmt"] is not None
+        assert select_chunk["parent_stmt"] == from_chunk["parent_stmt"] == join_chunk1["parent_stmt"] == join_chunk2["parent_stmt"]
+        assert select_chunk["parent_name"] == "Query on my_db.users"
 
     def test_chunk_sql_fallback(self, temp_sql_file, tmp_path):
         """Test non-query SQL statements fall back to default sql_statement type."""
@@ -146,31 +151,62 @@ SELECT id FROM users;"""
         processor = SqlProcessor(Path("."), Path("."))
         
         # Comment
-        comment_chunk = {"type": "sql_comment", "content": "-- my comment"}
+        comment_chunk = {
+            "type": "sql_comment",
+            "content": "-- my comment",
+            "parent_stmt": "abc12345",
+            "parent_name": "my_view"
+        }
         formatted = processor.format_chunk(comment_chunk)
-        assert "SQL Comment:\n-- my comment" in formatted
+        assert "SQL Comment (Statement: my_view, Link ID: abc12345):\n-- my comment" in formatted
         
         # DDL
-        ddl_chunk = {"type": "sql_create", "sql_type": "CREATE VIEW", "name": "my_view", "content": "CREATE VIEW my_view AS SELECT 1;"}
+        ddl_chunk = {
+            "type": "sql_create",
+            "sql_type": "CREATE VIEW",
+            "name": "my_view",
+            "content": "CREATE VIEW my_view AS SELECT 1;",
+            "parent_stmt": "abc12345",
+            "parent_name": "my_view"
+        }
         formatted = processor.format_chunk(ddl_chunk)
-        assert "SQL DDL: CREATE VIEW my_view" in formatted
+        assert "SQL DDL: CREATE VIEW my_view (Statement: my_view, Link ID: abc12345)" in formatted
         assert "Content:\nCREATE VIEW my_view AS SELECT 1;" in formatted
         
         # Select
-        select_chunk = {"type": "sql_select", "fields": ["field_1", "field_2"], "content": "SELECT field_1, field_2"}
+        select_chunk = {
+            "type": "sql_select",
+            "fields": ["field_1", "field_2"],
+            "content": "SELECT field_1, field_2",
+            "parent_stmt": "abc12345",
+            "parent_name": "my_view"
+        }
         formatted = processor.format_chunk(select_chunk)
-        assert "SQL SELECT Fields: field_1, field_2" in formatted
+        assert "SQL SELECT Fields: field_1, field_2 (Statement: my_view, Link ID: abc12345)" in formatted
         assert "Clause:\nSELECT field_1, field_2" in formatted
         
         # From
-        from_chunk = {"type": "sql_from", "tables": ["my_schema.table_a"], "content": "FROM my_schema.table_a"}
+        from_chunk = {
+            "type": "sql_from",
+            "tables": ["my_schema.table_a"],
+            "content": "FROM my_schema.table_a",
+            "parent_stmt": "abc12345",
+            "parent_name": "my_view"
+        }
         formatted = processor.format_chunk(from_chunk)
-        assert "SQL FROM Tables: my_schema.table_a" in formatted
+        assert "SQL FROM Tables: my_schema.table_a (Statement: my_view, Link ID: abc12345)" in formatted
         
         # Join
-        join_chunk = {"type": "sql_join", "table": "table_b", "condition": "a.id = b.id", "content": "JOIN table_b ON a.id = b.id"}
+        join_chunk = {
+            "type": "sql_join",
+            "table": "table_b",
+            "condition": "a.id = b.id",
+            "content": "JOIN table_b ON a.id = b.id",
+            "parent_stmt": "abc12345",
+            "parent_name": "my_view"
+        }
         formatted = processor.format_chunk(join_chunk)
-        assert "SQL JOIN Table: table_b" in formatted
+        assert "SQL JOIN Table: table_b (Statement: my_view, Link ID: abc12345)" in formatted
         assert "Condition: a.id = b.id" in formatted
 
     def test_vectorize_sql(self, temp_sql_file, tmp_path):
