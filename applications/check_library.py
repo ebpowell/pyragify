@@ -16,7 +16,7 @@ from processor import RepoContentProcessor, FileProcessor
 if __name__ == "__main__":
     # repo_folder = '/mnt/c/Users/uvp/'
     repo_folder = '/home/ebpowell/GIT_REPO/'
-    repo_name = 'itsd_capacity_planning' 
+    repo_name = 'TradeOutreach' 
     repo_path = Path(repo_folder + repo_name)
     output_dir = Path(repo_folder + '/output/'+repo_name)
     hashes_file = output_dir / "hashes.json"
