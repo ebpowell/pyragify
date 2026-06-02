@@ -210,6 +210,7 @@ class SqlProcessor(FileProcessor):
                         chunks.append({
                             "type": "sql_comment",
                             "name": "Comment",
+                            "filename": file_path.name,
                             "content": comment_str
                         })
                     continue
@@ -240,6 +241,7 @@ class SqlProcessor(FileProcessor):
                         "type": "sql_create",
                         "sql_type": sql_type,
                         "name": name,
+                        "filename": file_path.name,
                         "content": remaining_sql
                     }
 
@@ -256,6 +258,7 @@ class SqlProcessor(FileProcessor):
                                 "type": "sql_select",
                                 "name": "SELECT Fields",
                                 "fields": fields,
+                                "filename": file_path.name,
                                 "content": clause_content.rstrip(';')
                             }
                         elif clause_type == 'FROM':
@@ -270,6 +273,7 @@ class SqlProcessor(FileProcessor):
                                 "type": "sql_from",
                                 "name": "FROM Tables",
                                 "tables": tables,
+                                "filename": file_path.name,
                                 "content": clause_content.rstrip(';')
                             }
                             if tables and not parent_name:
@@ -295,6 +299,7 @@ class SqlProcessor(FileProcessor):
                                 "name": f"JOIN - {table_name}",
                                 "table": table_name,
                                 "condition": condition_text,
+                                "filename": file_path.name,
                                 "content": clause_content.rstrip(';')
                             })
                 except Exception as parse_ex:
@@ -318,6 +323,7 @@ class SqlProcessor(FileProcessor):
                         "name": "Comment",
                         "parent_stmt": parent_stmt_hash,
                         "parent_name": parent_name,
+                        "filename": file_path.name,
                         "content": stmt_info["comment"]
                     })
                     
@@ -345,6 +351,7 @@ class SqlProcessor(FileProcessor):
                         "name": "Statement",
                         "parent_stmt": parent_stmt_hash,
                         "parent_name": parent_name,
+                        "filename": file_path.name,
                         "content": remaining_sql
                     })
 
@@ -352,6 +359,7 @@ class SqlProcessor(FileProcessor):
                  return [{
                     "type": "file",
                     "name": file_path.name,
+                    "filename": file_path.name,
                     "content": content
                 }], line_count
 
@@ -361,6 +369,7 @@ class SqlProcessor(FileProcessor):
             return [{
                 "type": "file",
                 "name": file_path.name,
+                "filename": file_path.name,
                 "content": width_fallback
             }], width_fallback.count('\n') + 1
             

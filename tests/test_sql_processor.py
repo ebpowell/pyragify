@@ -27,11 +27,13 @@ class TestSqlProcessor:
         assert select_chunk["type"] == "sql_select"
         assert select_chunk["fields"] == ["a", "b", "c"]
         assert "SELECT a, b, c" in select_chunk["content"]
+        assert select_chunk["filename"] == "query.sql"
         
         from_chunk = chunks[1]
         assert from_chunk["type"] == "sql_from"
         assert from_chunk["tables"] == ["schema.my_table"]
         assert "FROM schema.my_table" in from_chunk["content"]
+        assert from_chunk["filename"] == "query.sql"
 
     def test_chunk_sql_comment_extraction(self, temp_sql_file, tmp_path):
         """Test isolating leading comment blocks to separate chunks."""
@@ -53,14 +55,17 @@ SELECT id FROM users;"""
         assert comment_chunk["type"] == "sql_comment"
         assert "This is a single-line comment" in comment_chunk["content"]
         assert "This is a multi-line comment block" in comment_chunk["content"]
+        assert comment_chunk["filename"] == "query.sql"
         
         select_chunk = chunks[1]
         assert select_chunk["type"] == "sql_select"
         assert select_chunk["fields"] == ["id"]
+        assert select_chunk["filename"] == "query.sql"
         
         from_chunk = chunks[2]
         assert from_chunk["type"] == "sql_from"
         assert from_chunk["tables"] == ["users"]
+        assert from_chunk["filename"] == "query.sql"
 
     def test_chunk_sql_ddl_statement(self, temp_sql_file, tmp_path):
         """Test CREATE OR REPLACE TABLE / VIEW / FUNCTION etc. parsing."""
@@ -79,19 +84,23 @@ SELECT id FROM users;"""
         
         comment_chunk = chunks[0]
         assert comment_chunk["type"] == "sql_comment"
+        assert comment_chunk["filename"] == "query.sql"
         
         create_chunk = chunks[1]
         assert create_chunk["type"] == "sql_create"
         assert create_chunk["sql_type"] == "CREATE OR REPLACE TABLE"
         assert create_chunk["name"] == "my_project.my_dataset.my_table"
+        assert create_chunk["filename"] == "query.sql"
         
         select_chunk = chunks[2]
         assert select_chunk["type"] == "sql_select"
         assert select_chunk["fields"] == ["name", "age"]
+        assert select_chunk["filename"] == "query.sql"
         
         from_chunk = chunks[3]
         assert from_chunk["type"] == "sql_from"
         assert from_chunk["tables"] == ["raw_users"]
+        assert from_chunk["filename"] == "query.sql"
 
     def test_chunk_sql_joins(self, temp_sql_file, tmp_path):
         """Test JOIN clause deconstruction (tables, aliases, conditions)."""
@@ -112,22 +121,26 @@ SELECT id FROM users;"""
         select_chunk = chunks[0]
         assert select_chunk["type"] == "sql_select"
         assert select_chunk["fields"] == ["u.id", "o.order_date", "d.delivery_status"]
+        assert select_chunk["filename"] == "query.sql"
         
         from_chunk = chunks[1]
         assert from_chunk["type"] == "sql_from"
         assert from_chunk["tables"] == ["my_db.users"]
+        assert from_chunk["filename"] == "query.sql"
         
         join_chunk1 = chunks[2]
         assert join_chunk1["type"] == "sql_join"
         assert join_chunk1["table"] == "my_db.orders"
         assert join_chunk1["condition"] == "ON u.id = o.user_id"
         assert "LEFT JOIN" in join_chunk1["content"]
+        assert join_chunk1["filename"] == "query.sql"
         
         join_chunk2 = chunks[3]
         assert join_chunk2["type"] == "sql_join"
         assert join_chunk2["table"] == "my_db.deliveries"
         assert join_chunk2["condition"] == "USING (order_id)"
         assert "INNER JOIN" in join_chunk2["content"]
+        assert join_chunk2["filename"] == "query.sql"
         
         # Verify parent statement links and names are consistent
         assert select_chunk["parent_stmt"] is not None
@@ -145,6 +158,7 @@ SELECT id FROM users;"""
         assert len(chunks) == 1
         assert chunks[0]["type"] == "sql_statement"
         assert chunks[0]["content"] == "COMMIT;"
+        assert chunks[0]["filename"] == "query.sql"
 
     def test_format_chunks(self):
         """Test formatting of granular chunks."""
@@ -159,6 +173,17 @@ SELECT id FROM users;"""
         }
         formatted = processor.format_chunk(comment_chunk)
         assert "SQL Comment (Statement: my_view, Link ID: abc12345):\n-- my comment" in formatted
+
+        # Comment with filename
+        comment_chunk_with_file = {
+            "type": "sql_comment",
+            "content": "-- my comment",
+            "parent_stmt": "abc12345",
+            "parent_name": "my_view",
+            "filename": "query.sql"
+        }
+        formatted_with_file = processor.format_chunk(comment_chunk_with_file)
+        assert "SQL Comment (File: query.sql, Statement: my_view, Link ID: abc12345):\n-- my comment" in formatted_with_file
         
         # DDL
         ddl_chunk = {
@@ -167,10 +192,11 @@ SELECT id FROM users;"""
             "name": "my_view",
             "content": "CREATE VIEW my_view AS SELECT 1;",
             "parent_stmt": "abc12345",
-            "parent_name": "my_view"
+            "parent_name": "my_view",
+            "filename": "query.sql"
         }
         formatted = processor.format_chunk(ddl_chunk)
-        assert "SQL DDL: CREATE VIEW my_view (Statement: my_view, Link ID: abc12345)" in formatted
+        assert "SQL DDL: CREATE VIEW my_view (File: query.sql, Statement: my_view, Link ID: abc12345)" in formatted
         assert "Content:\nCREATE VIEW my_view AS SELECT 1;" in formatted
         
         # Select
@@ -179,10 +205,11 @@ SELECT id FROM users;"""
             "fields": ["field_1", "field_2"],
             "content": "SELECT field_1, field_2",
             "parent_stmt": "abc12345",
-            "parent_name": "my_view"
+            "parent_name": "my_view",
+            "filename": "query.sql"
         }
         formatted = processor.format_chunk(select_chunk)
-        assert "SQL SELECT Fields: field_1, field_2 (Statement: my_view, Link ID: abc12345)" in formatted
+        assert "SQL SELECT Fields: field_1, field_2 (File: query.sql, Statement: my_view, Link ID: abc12345)" in formatted
         assert "Clause:\nSELECT field_1, field_2" in formatted
         
         # From
@@ -191,10 +218,11 @@ SELECT id FROM users;"""
             "tables": ["my_schema.table_a"],
             "content": "FROM my_schema.table_a",
             "parent_stmt": "abc12345",
-            "parent_name": "my_view"
+            "parent_name": "my_view",
+            "filename": "query.sql"
         }
         formatted = processor.format_chunk(from_chunk)
-        assert "SQL FROM Tables: my_schema.table_a (Statement: my_view, Link ID: abc12345)" in formatted
+        assert "SQL FROM Tables: my_schema.table_a (File: query.sql, Statement: my_view, Link ID: abc12345)" in formatted
         
         # Join
         join_chunk = {
@@ -203,10 +231,11 @@ SELECT id FROM users;"""
             "condition": "a.id = b.id",
             "content": "JOIN table_b ON a.id = b.id",
             "parent_stmt": "abc12345",
-            "parent_name": "my_view"
+            "parent_name": "my_view",
+            "filename": "query.sql"
         }
         formatted = processor.format_chunk(join_chunk)
-        assert "SQL JOIN Table: table_b (Statement: my_view, Link ID: abc12345)" in formatted
+        assert "SQL JOIN Table: table_b (File: query.sql, Statement: my_view, Link ID: abc12345)" in formatted
         assert "Condition: a.id = b.id" in formatted
 
     def test_vectorize_sql(self, temp_sql_file, tmp_path):

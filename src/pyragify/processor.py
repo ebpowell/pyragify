@@ -306,9 +306,12 @@ class FileProcessor:
             content = self._ensure_text(chunk.get("content", ""))
             parent_stmt = chunk.get("parent_stmt")
             parent_name = chunk.get("parent_name")
+            filename = chunk.get("filename")
             conn_info = ""
-            if parent_stmt or parent_name:
+            if parent_stmt or parent_name or filename:
                 parts = []
+                if filename:
+                    parts.append(f"File: {filename}")
                 if parent_name:
                     parts.append(f"Statement: {parent_name}")
                 if parent_stmt:

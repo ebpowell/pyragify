@@ -13,14 +13,14 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "ITSD_Analysis",
+            "name": "itsd_capacity_planning",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/../pyragify/src/pyragify/cli.py",
             "console": "integratedTerminal",
             "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
                      "--repo-path", "${workspaceFolder}/../itsd_capacity_planning",
-                     "--output-dir",  "${workspaceFolder}/../output"]
+                     "--output-dir",  "${workspaceFolder}/../output/itsd_capacity_planning"]
         },
         {
             "name": "TradeOutreach",
@@ -30,7 +30,17 @@
             "console": "integratedTerminal",
             "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
                      "--repo-path", "${workspaceFolder}/../TradeOutreach",
-                     "--output-dir",  "${workspaceFolder}/../output"]
-        }
+                     "--output-dir",  "${workspaceFolder}/../output/TradeOutreach"]
+        },
+        {
+            "name": "BeSeenDoorController",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/../pyragify/src/pyragify/cli.py",
+            "console": "integratedTerminal",
+            "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
+                        "--repo-path", "${workspaceFolder}/../BeSeenDoorController",
+                        "--output-dir",  "${workspaceFolder}/../output/BeSeenDoorController"]
+    }
     ]
 }
