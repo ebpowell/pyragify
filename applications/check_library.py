@@ -11,6 +11,7 @@ src_path = current_dir.parent / "src/pyragify"
 # 3. Add this path to sys.path so Python looks there for modules
 sys.path.append(str(src_path))
 # import cli:app
+# pyrefly: ignore [missing-import]
 from processor import RepoContentProcessor, FileProcessor
 
 if __name__ == "__main__":
