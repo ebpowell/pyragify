@@ -228,7 +228,12 @@ class SqlProcessor(FileProcessor):
                 
                 # 2. DDL Check
                 ddl_regex = re.compile(
-                    r'^\s*(CREATE(?:\s+OR\s+REPLACE)?(?:\s+(?:TEMP|TEMPORARY|SECURE))?\s+(?:TABLE|VIEW|FUNCTION|PROCEDURE|MATERIALIZED\s+VIEW|INDEX|TRIGGER))\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\s\(\)]+)',
+                    r'^\s*('
+                    r'CREATE(?:\s+OR\s+REPLACE)?(?:\s+(?:TEMP|TEMPORARY|SECURE))?\s+(?:TABLE|VIEW|FUNCTION|PROCEDURE|MATERIALIZED\s+VIEW|INDEX|TRIGGER)|'
+                    r'ALTER\s+(?:TABLE|VIEW|FUNCTION|PROCEDURE|MATERIALIZED\s+VIEW|INDEX|TRIGGER)|'
+                    r'DROP\s+(?:TABLE|VIEW|FUNCTION|PROCEDURE|MATERIALIZED\s+VIEW|INDEX|TRIGGER)|'
+                    r'ADD(?:\s+(?:COLUMN|CONSTRAINT|KEY|INDEX|TABLE|VIEW|FUNCTION|PROCEDURE))?'
+                    r')\s+(?:IF\s+(?:NOT\s+)?EXISTS\s+)?([^\s\(\);]+)',
                     re.IGNORECASE | re.DOTALL
                 )
                 ddl_match = ddl_regex.match(remaining_sql)
