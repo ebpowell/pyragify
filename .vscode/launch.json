@@ -4,12 +4,33 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "ITSD_Analysis",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/../pyragify/src/pyragify/cli.py",
+            "console": "integratedTerminal",
+            "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
+                     "--repo-path", "${workspaceFolder}/../itsd_capacity_planning",
+                     "--output-dir",  "${workspaceFolder}/../output"]
+        },
+        {
+            "name": "TradeOutreach",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/../pyragify/src/pyragify/cli.py",
+            "console": "integratedTerminal",
+            "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
+                     "--repo-path", "${workspaceFolder}/../TradeOutreach",
+                     "--output-dir",  "${workspaceFolder}/../output"]
         }
     ]
 }
