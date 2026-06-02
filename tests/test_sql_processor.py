@@ -257,3 +257,36 @@ SELECT id FROM users;"""
         # Validate that embeddings is a non-empty sequence
         assert len(embeddings) == 3
         assert len(embeddings[0]) > 0
+
+    def test_chunk_sql_ddl_alter_drop_add(self, temp_sql_file, tmp_path):
+        """Test ALTER, DROP, and ADD statements parsing."""
+        sql_content = """
+        ALTER TABLE my_schema.my_table ADD COLUMN email VARCHAR(255);
+        DROP TABLE IF EXISTS my_schema.old_table;
+        ADD CONSTRAINT pk_id PRIMARY KEY (id);
+        """
+        file_path = temp_sql_file(sql_content)
+        
+        processor = SqlProcessor(tmp_path, tmp_path)
+        chunks, _ = processor.chunk_sql_file(file_path)
+        
+        # Expecting three DDL chunks
+        assert len(chunks) == 3
+        
+        alter_chunk = chunks[0]
+        assert alter_chunk["type"] == "sql_create"
+        assert alter_chunk["sql_type"] == "ALTER TABLE"
+        assert alter_chunk["name"] == "my_schema.my_table"
+        assert alter_chunk["filename"] == "query.sql"
+        
+        drop_chunk = chunks[1]
+        assert drop_chunk["type"] == "sql_create"
+        assert drop_chunk["sql_type"] == "DROP TABLE"
+        assert drop_chunk["name"] == "my_schema.old_table"
+        assert drop_chunk["filename"] == "query.sql"
+        
+        add_chunk = chunks[2]
+        assert add_chunk["type"] == "sql_create"
+        assert add_chunk["sql_type"] == "ADD CONSTRAINT"
+        assert add_chunk["name"] == "pk_id"
+        assert add_chunk["filename"] == "query.sql"
