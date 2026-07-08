@@ -1,3 +1,4 @@
+import sys
 import ast
 import hashlib
 import json
@@ -8,7 +9,11 @@ from io import StringIO
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
-from utils import validate_directory
+
+
+# Add working path to project to import utils
+sys.path.append( Path(__file__).resolve().parent)
+from pyragify.utils import validate_directory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -488,15 +493,15 @@ class FileProcessor:
             return self.chunk_markdown_file(file_path)
         elif suffix == ".sql":
             # Assumes SqlProcessor logic is available or mixed-in [9]
-            from sql_processor import SqlProcessor
+            from pyragify.sql_processor import SqlProcessor
             return SqlProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
         elif suffix == ".tmdl":
             # Assumes PBIProcessor logic is available or mixed-in [10]
-            from powerbi_processor import PBIProcessor
+            from pyragify.powerbi_processor import PBIProcessor
             return PBIProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
         elif suffix in ['.xlsx', '.xlsm']:
             # Delegate to the ExcelProcessor logic
-            from excel_processor import ExcelProcessor
+            from pyragify.excel_processor import ExcelProcessor
             return ExcelProcessor(self.repo_path, self.output_dir).chunk_file(file_path)
         elif suffix in FILE_TYPE_MAP:
             return self.chunk_tree_sitter_file(file_path, suffix)
