@@ -2,7 +2,7 @@ import logging
 import hashlib
 import re
 from pathlib import Path
-from processor import FileProcessor
+from pyragify.processor import FileProcessor
 
 logger = logging.getLogger(__name__)
 
