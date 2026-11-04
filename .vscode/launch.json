@@ -41,6 +41,16 @@
             "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
                         "--repo-path", "${workspaceFolder}/../BeSeenDoorController",
                         "--output-dir",  "${workspaceFolder}/../output/BeSeenDoorController"]
+    },
+            {
+            "name": "HOA_OS",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/../pyragify/src/pyragify/cli.py",
+            "console": "integratedTerminal",
+            "args": ["--config-file", "${workspaceFolder}/../pyragify/config.yaml", 
+                        "--repo-path", "${workspaceFolder}/../HOA_OS",
+                        "--output-dir",  "${workspaceFolder}/../output/HOA_OS"]
     }
     ]
 }
