@@ -1,0 +1,21 @@
+Index: applications/check_library.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import sys\nfrom pathlib import Path\n\n# 1. Get the path to the 'applications' folder (where this script is)\ncurrent_dir = Path(__file__).resolve().parent\n\n# 2. Go up one level to the Project Root, then into 'src'\n#    Structure: applications/ -> (up) -> Root -> (down) -> src\nsrc_path = current_dir.parent / \"src/pyragify\"\n\n# 3. Add this path to sys.path so Python looks there for modules\nsys.path.append(str(src_path))\n\nfrom processor import RepoContentProcessor, FileProcessor\n\nif __name__ == \"__main__\":\n    repo_folder = '/home/ebpowell/GIT_REPO/ABWC/'\n    repo_name = 'ABWC_Demo_work/Model'\n    repo_path = Path(repo_folder + repo_name)\n    output_dir = Path(repo_folder + '/output')\n    hashes_file = output_dir / \"hashes.json\"\n    if hashes_file.exists():\n        hashes_file.unlink()\n    skip_folders = [\".venv\", \"venv\", \"build\", \"dist\", \"__pycache__\", \".idea\", \".git\", \"output\"]\n    skip_patterns = [\"**/*.pyc\", \"**/__pycache__\", \"**/venv\", \"**/.venv\"]\n\n    processor = RepoContentProcessor(repo_path, output_dir, skip_patterns=skip_patterns, skip_dirs=skip_folders,\n                                     processor_class=FileProcessor)\n    processor.process_repo()
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/applications/check_library.py b/applications/check_library.py
+--- a/applications/check_library.py	(revision 6fac200a8fd843386075f141311ff37a5f028434)
++++ b/applications/check_library.py	(date 1768243712954)
+@@ -14,8 +14,8 @@
+ from processor import RepoContentProcessor, FileProcessor
+ 
+ if __name__ == "__main__":
+-    repo_folder = '/home/ebpowell/GIT_REPO/ABWC/'
+-    repo_name = 'ABWC_Demo_work/Model'
++    repo_folder = '/mnt/c/Users/UVP/'
++    repo_name = 'ITSD'
+     repo_path = Path(repo_folder + repo_name)
+     output_dir = Path(repo_folder + '/output')
+     hashes_file = output_dir / "hashes.json"

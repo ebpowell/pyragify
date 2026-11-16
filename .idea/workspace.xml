@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ae937392-cf2e-4b90-849f-bcf78c7f143a" name="Changes" comment="Updated DB connection to use local PG instance">
+      <change beforePath="$PROJECT_DIR$/applications/check_library.py" beforeDir="false" afterPath="$PROJECT_DIR$/applications/check_library.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="36ZaowLLhh6Guk98KZVn6pAHyLf" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.check_library.executor&quot;: &quot;Run&quot;,
+    &quot;Python.postgresql_table_tokenizel.executor&quot;: &quot;Run&quot;,
+    &quot;Python.process_excel.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;powerbi__tmdl&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/ebpowell/GIT_REPO/pyragify/applications&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/applications" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.check_library">
+    <configuration name="check_library" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pyragify" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/applications" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/applications/check_library.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="postgresql_table_tokenizel" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pyragify" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/applications" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/applications/postgresql_table_tokenizel.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="process_excel" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="pyragify" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/applications" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/applications/process_excel.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.check_library" />
+        <item itemvalue="Python.postgresql_table_tokenizel" />
+        <item itemvalue="Python.process_excel" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-164cda30dcd9-0af03a5fa574-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.26830.99" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ae937392-cf2e-4b90-849f-bcf78c7f143a" name="Changes" comment="" />
+      <created>1765216726471</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1765216726471</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Fixing references to work in PyCharm">
+      <option name="closed" value="true" />
+      <created>1765222123881</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1765222123881</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Fixing references to work in PyCharm">
+      <option name="closed" value="true" />
+      <created>1766510299361</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1766510299361</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Added function to vectorize the relationships table from PowerBI tmdl files.">
+      <option name="closed" value="true" />
+      <created>1767042577470</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1767042577470</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Added Class to vectorize equations, XLookups. and Pivots ib Excel files.">
+      <option name="closed" value="true" />
+      <created>1767639516383</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1767639516383</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Cleanup. added some documentation.">
+      <option name="closed" value="true" />
+      <created>1767641149046</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1767641149046</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Reorder state logic-gate statements in processor.py format_chunk to allow execution of new modules.">
+      <option name="closed" value="true" />
+      <created>1767983261670</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1767983261670</updated>
+    </task>
+    <task id="LOCAL-00007" summary="More debugging work on the Excel file processor. Output is now properly fotmatted / labeled.">
+      <option name="closed" value="true" />
+      <created>1768246549650</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1768246549650</updated>
+    </task>
+    <task id="LOCAL-00008" summary="CLean-up of the Connection and Lineage code.">
+      <option name="closed" value="true" />
+      <created>1768327324247</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1768327324247</updated>
+    </task>
+    <task id="LOCAL-00009" summary="New code to parse / vectorize the data from excel file as well as the structure and formulas.&#10;&#10;Added a application to combine the schema and data oarsing into a single workflow for excel files.">
+      <option name="closed" value="true" />
+      <created>1768500510570</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1768500510570</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Excel logic debugging and output formatting. Extensive rework  of the PowerBI module to better capture table information including source files and PowerQuery and DAX logic. Still needs some formatting work for the PowerBI output.">
+      <option name="closed" value="true" />
+      <created>1769573648173</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1769573648173</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Changed paths.">
+      <option name="closed" value="true" />
+      <created>1770729147428</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1770729147428</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Updated DB connection to use local PG instance">
+      <option name="closed" value="true" />
+      <created>1771625689157</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1771625689157</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Fixing references to work in PyCharm" />
+    <MESSAGE value="Added function to vectorize the relationships table from PowerBI tmdl files." />
+    <MESSAGE value="Added Class to vectorize equations, XLookups. and Pivots ib Excel files." />
+    <MESSAGE value="Cleanup. added some documentation." />
+    <MESSAGE value="Reorder state logic-gate statements in processor.py format_chunk to allow execution of new modules." />
+    <MESSAGE value="More debugging work on the Excel file processor. Output is now properly fotmatted / labeled." />
+    <MESSAGE value="CLean-up of the Connection and Lineage code." />
+    <MESSAGE value="New code to parse / vectorize the data from excel file as well as the structure and formulas.&#10;&#10;Added a application to combine the schema and data oarsing into a single workflow for excel files." />
+    <MESSAGE value="Excel logic debugging and output formatting. Extensive rework  of the PowerBI module to better capture table information including source files and PowerQuery and DAX logic. Still needs some formatting work for the PowerBI output." />
+    <MESSAGE value="Changed paths." />
+    <MESSAGE value="Updated DB connection to use local PG instance" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated DB connection to use local PG instance" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/pyragify/excel_processor.py</url>
+          <line>486</line>
+          <option name="timeStamp" value="29" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/pyragify/powerbi_processor.py</url>
+          <line>133</line>
+          <option name="timeStamp" value="35" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/pyragify/tabular_tokenizer.py</url>
+          <line>143</line>
+          <option name="timeStamp" value="36" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
